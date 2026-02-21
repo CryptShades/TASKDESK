@@ -1,0 +1,16 @@
+{
+  "name": "@taskdesk/config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+    "./tsconfig/react-native.json": "./tsconfig/react-native.json",
+    "./eslint": "./eslint/index.js",
+    "./tailwind": "./tailwind/base.js"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3"
+  }
+}
