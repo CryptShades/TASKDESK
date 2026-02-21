@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type { Database } from '../../supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -31,9 +32,10 @@ export class AuthError extends Error {
 
 export async function signUp(data: SignUpData) {
   const supabase = createClient();
+  const adminSupabase = createAdminClient();
 
-  // Start transaction by creating org first
-  const { data: org, error: orgError } = await supabase
+  // Start transaction by creating org first using admin client
+  const { data: org, error: orgError } = await adminSupabase
     .from('organizations')
     .insert({ name: data.orgName })
     .select()
@@ -56,17 +58,24 @@ export async function signUp(data: SignUpData) {
 
   if (authError) {
     // Clean up org if auth fails
-    await supabase.from('organizations').delete().eq('id', org.id);
+    await adminSupabase.from('organizations').delete().eq('id', org.id);
     throw new AuthError('AUTH_SIGNUP_FAILED', authError.message);
   }
 
   if (!authData.user) {
-    await supabase.from('organizations').delete().eq('id', org.id);
+    await adminSupabase.from('organizations').delete().eq('id', org.id);
     throw new AuthError('AUTH_SIGNUP_FAILED', 'No user returned from signup');
   }
 
-  // Create user record
-  const { data: user, error: userError } = await supabase
+  // Auto-confirm the user email for development
+  if (authData.user && !authData.session) {
+    await adminSupabase.auth.admin.updateUserById(authData.user.id, {
+      email_confirm: true,
+    });
+  }
+
+  // Create user record using admin client
+  const { data: user, error: userError } = await adminSupabase
     .from('users')
     .insert({
       id: authData.user.id,
@@ -80,12 +89,12 @@ export async function signUp(data: SignUpData) {
 
   if (userError) {
     // Clean up
-    await supabase.auth.admin.deleteUser(authData.user.id);
-    await supabase.from('organizations').delete().eq('id', org.id);
+    await adminSupabase.auth.admin.deleteUser(authData.user.id);
+    await adminSupabase.from('organizations').delete().eq('id', org.id);
     throw new AuthError('USER_CREATE_FAILED', 'Failed to create user record');
   }
 
-  return { user, org };
+  return { user, org, session: authData.session };
 }
 
 export async function signIn(email: string, password: string) {

@@ -84,8 +84,14 @@ export default function SignupPage() {
             'An account with this email already exists. Sign in instead.'
           );
         } else {
-          setAlert('Account creation failed. Please try again.');
+          setAlert(data.error?.message || 'Account creation failed. Please try again.');
         }
+        return;
+      }
+
+      // Check if email confirmation is required
+      if (data.data?.user && !data.data?.session) {
+        setAlert('Account created! Please check your email and click the confirmation link to sign in.');
         return;
       }
 
