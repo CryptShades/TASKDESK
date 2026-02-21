@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useUser } from '@/context/user-context';
 import { subscribeToOrgChannels, subscribeToUserChannels } from '@/lib/realtime';

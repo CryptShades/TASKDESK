@@ -1,3 +1,5 @@
+"use client";
+
 import { CheckCircle2, Clock, Play, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '../../../supabase/types';

@@ -1,3 +1,5 @@
+"use client";
+
 import { RiskBadge } from '@/components/ui/risk-badge';
 import { MetricCard } from '@/components/ui/metric-card';
 import { Button } from '@/components/ui/button';
