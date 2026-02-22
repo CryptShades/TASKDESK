@@ -49,6 +49,13 @@ const config: Config = {
           completed: 'hsl(var(--status-completed))',
           overdue: 'hsl(var(--status-overdue))',
         },
+        // Landing page accent colors
+        violet: '#7C3AED',
+        cyan: '#06B6D4',
+        'electric-blue': '#3B82F6',
+        'risk-green': '#22C55E',
+        'risk-amber': '#F59E0B',
+        'risk-red': '#EF4444',
       },
       borderRadius: {
         sm: 'var(--radius-sm)',

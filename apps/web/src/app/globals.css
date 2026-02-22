@@ -56,14 +56,13 @@
 }
 
 @layer base {
-  /* ... existing base styles ... */
-  
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 
 @layer utilities {
+  /* ─── Existing Utilities ────────────────────────────────── */
   .skeleton {
     background: linear-gradient(
       90deg,
@@ -79,6 +78,89 @@
     animation: rowPulse 200ms ease-in-out;
   }
 
+  /* ─── Landing Page Utilities ────────────────────────────── */
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, #3B82F6 0%, #7C3AED 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Dot grid background texture */
+  .dot-grid {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Glass card */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.2);
+  }
+
+  /* Glow orbs */
+  .orb-blue {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orbDrift1 12s ease-in-out infinite;
+  }
+
+  .orb-violet {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orbDrift2 8s ease-in-out infinite;
+  }
+
+  /* Live pulse dot */
+  .animate-live-pulse {
+    animation: livePulse 2s ease-in-out infinite;
+  }
+
+  /* Risk hard glow pulse */
+  .animate-risk-glow {
+    animation: riskGlow 2s ease-in-out infinite;
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1), transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SVG connector line draw */
+  .connector-line {
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    transition: stroke-dashoffset 800ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .connector-line.drawn {
+    stroke-dashoffset: 0;
+  }
+
+  /* ─── Keyframes ─────────────────────────────────────────── */
   @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
@@ -87,5 +169,64 @@
   @keyframes rowPulse {
     0% { background-color: hsla(var(--risk-soft), 0.1); }
     100% { background-color: transparent; }
+  }
+
+  @keyframes orbDrift1 {
+    0%, 100% { transform: translate(0px, 0px); }
+    33% { transform: translate(-40px, 25px); }
+    66% { transform: translate(25px, -20px); }
+  }
+
+  @keyframes orbDrift2 {
+    0%, 100% { transform: translate(0px, 0px); }
+    33% { transform: translate(30px, -25px); }
+    66% { transform: translate(-20px, 30px); }
+  }
+
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes riskGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    50% { box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.25); }
+  }
+
+  @keyframes stepPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  /* Hover color utilities (for server-rendered links) */
+  .hover-muted {
+    color: #4A5068;
+    transition: color 150ms ease;
+  }
+  .hover-muted:hover {
+    color: #8A91A8;
+  }
+  .hover-secondary {
+    color: #8A91A8;
+    transition: color 150ms ease;
+  }
+  .hover-secondary:hover {
+    color: #F0F2F8;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .orb-blue, .orb-violet {
+      animation: none;
+    }
+    .animate-live-pulse, .animate-risk-glow {
+      animation: none;
+    }
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 }
