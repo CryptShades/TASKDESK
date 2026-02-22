@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
-import { getOrganization } from '@/services/organization.service';
+import { getCurrentUser } from '@/services/auth/server';
+import { getOrganization } from '@/services/organization/server';
 
 export async function GET(request: NextRequest) {
   try {

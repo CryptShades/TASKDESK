@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
-import { revokeInvitation } from '@/services/organization.service';
+import { getCurrentUser } from '@/services/auth/server';
+import { revokeInvitation } from '@/services/organization/server';
 
 export async function DELETE(
   request: NextRequest,

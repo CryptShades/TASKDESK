@@ -113,3 +113,7 @@ export type TaskWithOwner = Task & {
 export type TaskWithDependency = TaskWithOwner & {
   dependency: Task | null;
 };
+
+// ─── Error Codes ──────────────────────────────────────────────────────────────
+
+export { ErrorCode } from './errors';

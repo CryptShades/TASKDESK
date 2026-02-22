@@ -1,6 +1,6 @@
 // Re-export cn() and date helpers from the shared utils package
 // so web components can import from '@/lib/utils' without coupling to the package name.
-export { cn, formatDate, formatRelativeDate, isOverdue } from '@taskdesk/utils';
+export { cn, formatDate, formatRelativeDate, isOverdue, getInitials } from '@taskdesk/utils';
 
 import type { Database } from '../../supabase/types';
 

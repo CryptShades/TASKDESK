@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { signUp } from '@/services/auth.service';
+import { ErrorCode } from '@taskdesk/types';
+import { signUp } from '@/services/auth/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     if (!name || !email || !password || !orgName) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_FIELDS', message: 'All fields are required' } },
+        { data: null, error: { code: ErrorCode.MISSING_FIELDS, message: 'All fields are required' } },
         { status: 400 }
       );
     }

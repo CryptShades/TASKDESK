@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/server';
 import { markAllAsRead } from '@/services/notification.service';
 
 export async function PATCH(request: NextRequest) {

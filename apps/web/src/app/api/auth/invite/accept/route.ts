@@ -1,5 +1,6 @@
+import { ErrorCode } from '@taskdesk/types';
 import { NextRequest, NextResponse } from 'next/server';
-import { acceptInvite } from '@/services/auth.service';
+import { acceptInvite } from '@/services/auth/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     if (!token || !name || !password) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_FIELDS', message: 'Token, name, and password are required' } },
+        { data: null, error: { code: ErrorCode.MISSING_FIELDS, message: 'Token, name, and password are required' } },
         { status: 400 }
       );
     }

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Database } from '../../supabase/types';
 import { createNotification } from './notification.service';
 import { runRiskEngine } from '@/workers/risk-engine';
+import { ErrorCode } from '@taskdesk/types';
 
 type TaskStatus = Database['public']['Enums']['task_status'];
 type TaskRiskFlag = Database['public']['Enums']['task_risk_flag'];
@@ -21,7 +22,7 @@ export interface UpdateTaskData {
 }
 
 export class TaskError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'TaskError';
   }
@@ -50,7 +51,7 @@ export async function getTasksByCampaign(campaignId: string, orgId: string) {
     .order('due_date', { ascending: true });
 
   if (error) {
-    throw new TaskError('TASKS_FETCH_FAILED', 'Failed to fetch tasks');
+    throw new TaskError(ErrorCode.TASKS_FETCH_FAILED, 'Failed to fetch tasks');
   }
 
   return tasks;
@@ -77,7 +78,7 @@ export async function getTaskById(taskId: string, orgId: string) {
     .single();
 
   if (error) {
-    throw new TaskError('TASK_NOT_FOUND', 'Task not found');
+    throw new TaskError(ErrorCode.TASK_NOT_FOUND, 'Task not found');
   }
 
   return task;
@@ -98,7 +99,7 @@ export async function getMyTasks(userId: string, orgId: string) {
     .order('due_date', { ascending: true });
 
   if (error) {
-    throw new TaskError('TASKS_FETCH_FAILED', 'Failed to fetch your tasks');
+    throw new TaskError(ErrorCode.TASKS_FETCH_FAILED, 'Failed to fetch your tasks');
   }
 
   return tasks;
@@ -116,7 +117,7 @@ export async function createTask(data: CreateTaskData, campaignId: string, orgId
       .single();
 
     if (!dependency || dependency.campaign_id !== campaignId) {
-      throw new TaskError('INVALID_DEPENDENCY', 'Dependency task must exist in the same campaign');
+      throw new TaskError(ErrorCode.INVALID_DEPENDENCY, 'Dependency task must exist in the same campaign');
     }
   }
 
@@ -131,7 +132,7 @@ export async function createTask(data: CreateTaskData, campaignId: string, orgId
     .single();
 
   if (error) {
-    throw new TaskError('TASK_CREATE_FAILED', 'Failed to create task');
+    throw new TaskError(ErrorCode.TASK_CREATE_FAILED, 'Failed to create task');
   }
 
   // Log task creation event
@@ -167,19 +168,19 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ac
     .single();
 
   if (fetchError || !task) {
-    throw new TaskError('TASK_NOT_FOUND', 'Task not found');
+    throw new TaskError(ErrorCode.TASK_NOT_FOUND, 'Task not found');
   }
 
   // Validate actor is task owner
   if (task.owner_id !== actorId) {
-    throw new TaskError('INSUFFICIENT_PERMISSIONS', 'Only task owners can update task status');
+    throw new TaskError(ErrorCode.INSUFFICIENT_PERMISSIONS, 'Only task owners can update task status');
   }
 
   // Validate status transition
   const currentStatus = task.status as TaskStatus;
   const allowedNextStatuses = ALLOWED_TRANSITIONS[currentStatus];
   if (!allowedNextStatuses.includes(newStatus)) {
-    throw new TaskError('INVALID_TRANSITION', `Cannot change status from ${task.status} to ${newStatus}`);
+    throw new TaskError(ErrorCode.INVALID_TRANSITION, `Cannot change status from ${task.status} to ${newStatus}`);
   }
 
   // If moving to in_progress and has dependency, check dependency is completed
@@ -191,7 +192,7 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ac
       .single();
 
     if (!dependency || dependency.status !== 'completed') {
-      throw new TaskError('DEPENDENCY_NOT_MET', 'Cannot start task until dependency is completed');
+      throw new TaskError(ErrorCode.DEPENDENCY_NOT_MET, 'Cannot start task until dependency is completed');
     }
   }
 
@@ -204,7 +205,7 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ac
     .single();
 
   if (updateError) {
-    throw new TaskError('TASK_UPDATE_FAILED', 'Failed to update task status');
+    throw new TaskError(ErrorCode.TASK_UPDATE_FAILED, 'Failed to update task status');
   }
 
   // Log status change event
@@ -217,8 +218,8 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ac
     new_value: newStatus,
   });
 
-  // Trigger risk engine fire-and-forget
-  runRiskEngine(supabase, orgId).catch(err => 
+  // Trigger risk engine fire-and-forget (event-triggered mode)
+  runRiskEngine(supabase, { orgId }).catch(err => 
     console.error('Event-triggered Risk Engine failed:', err)
   );
 
@@ -243,14 +244,14 @@ export async function updateTask(taskId: string, data: UpdateTaskData, orgId: st
     .single();
 
   if (!task) {
-    throw new TaskError('TASK_NOT_FOUND', 'Task not found');
+    throw new TaskError(ErrorCode.TASK_NOT_FOUND, 'Task not found');
   }
 
   const isOwner = task.owner_id === actorId;
   const isManagerOrFounder = actor && ['manager', 'founder'].includes(actor.role);
 
   if (!isOwner && !isManagerOrFounder) {
-    throw new TaskError('INSUFFICIENT_PERMISSIONS', 'Only task owners, managers, or founders can update tasks');
+    throw new TaskError(ErrorCode.INSUFFICIENT_PERMISSIONS, 'Only task owners, managers, or founders can update tasks');
   }
 
   const { data: updatedTask, error } = await supabase
@@ -262,7 +263,7 @@ export async function updateTask(taskId: string, data: UpdateTaskData, orgId: st
     .single();
 
   if (error) {
-    throw new TaskError('TASK_UPDATE_FAILED', 'Failed to update task');
+    throw new TaskError(ErrorCode.TASK_UPDATE_FAILED, 'Failed to update task');
   }
 
   return updatedTask;
@@ -279,7 +280,7 @@ export async function deleteTask(taskId: string, orgId: string, actorId: string)
     .single();
 
   if (!actor || !['manager', 'founder'].includes(actor.role)) {
-    throw new TaskError('INSUFFICIENT_PERMISSIONS', 'Only managers and founders can delete tasks');
+    throw new TaskError(ErrorCode.INSUFFICIENT_PERMISSIONS, 'Only managers and founders can delete tasks');
   }
 
   const { error } = await supabase
@@ -289,7 +290,7 @@ export async function deleteTask(taskId: string, orgId: string, actorId: string)
     .eq('org_id', orgId);
 
   if (error) {
-    throw new TaskError('TASK_DELETE_FAILED', 'Failed to delete task');
+    throw new TaskError(ErrorCode.TASK_DELETE_FAILED, 'Failed to delete task');
   }
 
   return { success: true };

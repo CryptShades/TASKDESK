@@ -1,6 +1,10 @@
+import { ErrorCode } from '@taskdesk/types';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
-import { updateMemberRole, removeMember } from '@/services/organization.service';
+import { getCurrentUser } from '@/services/auth/server';
+import { updateMemberRole, removeMember } from '@/services/organization/server';
+
+const VALID_USER_ROLES = ['founder', 'manager', 'member'] as const;
+type UserRole = typeof VALID_USER_ROLES[number];
 
 export async function PATCH(
   request: NextRequest,
@@ -12,13 +16,20 @@ export async function PATCH(
 
     if (!role) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_ROLE', message: 'Role is required' } },
+        { data: null, error: { code: ErrorCode.MISSING_ROLE, message: 'Role is required' } },
+        { status: 400 }
+      );
+    }
+
+    if (!(VALID_USER_ROLES as readonly string[]).includes(role)) {
+      return NextResponse.json(
+        { data: null, error: { code: ErrorCode.INVALID_ROLE, message: 'Role must be founder, manager, or member' } },
         { status: 400 }
       );
     }
 
     const currentUser = await getCurrentUser();
-    const result = await updateMemberRole(params.id, role, currentUser.id);
+    const result = await updateMemberRole(params.id, role as UserRole, currentUser.id);
 
     return NextResponse.json(
       { data: result, error: null },

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import type { Database } from '../../supabase/types';
+import type { Database } from '../../../supabase/types';
+import { ErrorCode } from '@taskdesk/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -24,7 +25,7 @@ export interface AcceptInviteData {
 }
 
 export class AuthError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'AuthError';
   }
@@ -42,7 +43,7 @@ export async function signUp(data: SignUpData) {
     .single();
 
   if (orgError) {
-    throw new AuthError('ORG_CREATE_FAILED', 'Failed to create organization');
+    throw new AuthError(ErrorCode.ORG_CREATE_FAILED, 'Failed to create organization');
   }
 
   // Create auth user
@@ -59,12 +60,12 @@ export async function signUp(data: SignUpData) {
   if (authError) {
     // Clean up org if auth fails
     await adminSupabase.from('organizations').delete().eq('id', org.id);
-    throw new AuthError('AUTH_SIGNUP_FAILED', authError.message);
+    throw new AuthError(ErrorCode.AUTH_SIGNUP_FAILED, authError.message);
   }
 
   if (!authData.user) {
     await adminSupabase.from('organizations').delete().eq('id', org.id);
-    throw new AuthError('AUTH_SIGNUP_FAILED', 'No user returned from signup');
+    throw new AuthError(ErrorCode.AUTH_SIGNUP_FAILED, 'No user returned from signup');
   }
 
   // Auto-confirm the user email for development
@@ -91,7 +92,7 @@ export async function signUp(data: SignUpData) {
     // Clean up
     await adminSupabase.auth.admin.deleteUser(authData.user.id);
     await adminSupabase.from('organizations').delete().eq('id', org.id);
-    throw new AuthError('USER_CREATE_FAILED', 'Failed to create user record');
+    throw new AuthError(ErrorCode.USER_CREATE_FAILED, 'Failed to create user record');
   }
 
   return { user, org, session: authData.session };
@@ -106,7 +107,7 @@ export async function signIn(email: string, password: string) {
   });
 
   if (error) {
-    throw new AuthError('SIGNIN_FAILED', error.message);
+    throw new AuthError(ErrorCode.SIGNIN_FAILED, error.message);
   }
 
   return data;
@@ -118,7 +119,7 @@ export async function signOut() {
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    throw new AuthError('SIGNOUT_FAILED', error.message);
+    throw new AuthError(ErrorCode.SIGNOUT_FAILED, error.message);
   }
 }
 
@@ -128,7 +129,7 @@ export async function getSession() {
   const { data: { session }, error } = await supabase.auth.getSession();
 
   if (error) {
-    throw new AuthError('SESSION_ERROR', error.message);
+    throw new AuthError(ErrorCode.SESSION_ERROR, error.message);
   }
 
   return session;
@@ -140,11 +141,11 @@ export async function getCurrentUser() {
   const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
   if (authError) {
-    throw new AuthError('AUTH_ERROR', authError.message);
+    throw new AuthError(ErrorCode.AUTH_ERROR, authError.message);
   }
 
   if (!authUser) {
-    throw new AuthError('NO_USER', 'No authenticated user');
+    throw new AuthError(ErrorCode.NO_USER, 'No authenticated user');
   }
 
   const { data: user, error: userError } = await supabase
@@ -154,7 +155,7 @@ export async function getCurrentUser() {
     .single();
 
   if (userError) {
-    throw new AuthError('USER_NOT_FOUND', 'User record not found');
+    throw new AuthError(ErrorCode.USER_NOT_FOUND, 'User record not found');
   }
 
   return user;
@@ -171,7 +172,7 @@ export async function inviteMember(data: InviteData) {
     .single();
 
   if (!actor || !['founder', 'manager'].includes(actor.role)) {
-    throw new AuthError('INSUFFICIENT_PERMISSIONS', 'Only founders and managers can invite members');
+    throw new AuthError(ErrorCode.INSUFFICIENT_PERMISSIONS, 'Only founders and managers can invite members');
   }
 
   // Generate invite token (using Supabase auth admin)
@@ -188,7 +189,7 @@ export async function inviteMember(data: InviteData) {
   });
 
   if (error) {
-    throw new AuthError('INVITE_FAILED', error.message);
+    throw new AuthError(ErrorCode.INVITE_FAILED, error.message);
   }
 
   return {
@@ -207,11 +208,11 @@ export async function acceptInvite(data: AcceptInviteData) {
   });
 
   if (inviteError) {
-    throw new AuthError('INVALID_TOKEN', 'Invalid or expired invite token');
+    throw new AuthError(ErrorCode.INVALID_TOKEN, 'Invalid or expired invite token');
   }
 
   if (!inviteData.user) {
-    throw new AuthError('INVALID_TOKEN', 'No user data in token');
+    throw new AuthError(ErrorCode.INVALID_TOKEN, 'No user data in token');
   }
 
   // Get org_id and role from user metadata
@@ -219,7 +220,7 @@ export async function acceptInvite(data: AcceptInviteData) {
   const role = inviteData.user.user_metadata?.role as UserRole;
 
   if (!orgId || !role) {
-    throw new AuthError('INVALID_TOKEN', 'Missing organization or role data');
+    throw new AuthError(ErrorCode.INVALID_TOKEN, 'Missing organization or role data');
   }
 
   // Update auth user with password
@@ -228,7 +229,7 @@ export async function acceptInvite(data: AcceptInviteData) {
   });
 
   if (updateError) {
-    throw new AuthError('PASSWORD_UPDATE_FAILED', updateError.message);
+    throw new AuthError(ErrorCode.PASSWORD_UPDATE_FAILED, updateError.message);
   }
 
   // Create user record
@@ -245,7 +246,7 @@ export async function acceptInvite(data: AcceptInviteData) {
     .single();
 
   if (userError) {
-    throw new AuthError('USER_CREATE_FAILED', 'Failed to create user record');
+    throw new AuthError(ErrorCode.USER_CREATE_FAILED, 'Failed to create user record');
   }
 
   return user;

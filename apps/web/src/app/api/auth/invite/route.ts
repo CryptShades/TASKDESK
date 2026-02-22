@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { inviteMember, getCurrentUser } from '@/services/auth.service';
-import { createInvitation } from '@/services/organization.service';
+import { ErrorCode } from '@taskdesk/types';
+import { inviteMember, getCurrentUser } from '@/services/auth/server';
+import { createInvitation } from '@/services/organization/server';
+
+const VALID_USER_ROLES = ['founder', 'manager', 'member'] as const;
+type UserRole = typeof VALID_USER_ROLES[number];
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +13,14 @@ export async function POST(request: NextRequest) {
 
     if (!email || !role) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_FIELDS', message: 'Email and role are required' } },
+        { data: null, error: { code: ErrorCode.MISSING_FIELDS, message: 'Email and role are required' } },
+        { status: 400 }
+      );
+    }
+
+    if (!(VALID_USER_ROLES as readonly string[]).includes(role)) {
+      return NextResponse.json(
+        { data: null, error: { code: ErrorCode.INVALID_ROLE, message: 'Role must be founder, manager, or member' } },
         { status: 400 }
       );
     }

@@ -1,4 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
+import { ErrorCode } from '@taskdesk/types';
+
+export const VALID_ESCALATION_STAGES = ['1', '2', '3'] as const;
+export type EscalationStage = typeof VALID_ESCALATION_STAGES[number];
 
 export interface EscalationEvent {
   id: string;
@@ -26,14 +30,19 @@ export interface EscalationEvent {
 }
 
 export class EscalationError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'EscalationError';
   }
 }
 
-export async function getEscalations(orgId: string, stage?: string): Promise<EscalationEvent[]> {
+export async function getEscalations(orgId: string, stage?: EscalationStage): Promise<EscalationEvent[]> {
   const supabase = createClient();
+
+  // Defense-in-depth: validate stage even though the route handler checks first.
+  if (stage !== undefined && !(VALID_ESCALATION_STAGES as readonly string[]).includes(stage)) {
+    throw new EscalationError(ErrorCode.INVALID_STAGE, 'Stage must be 1, 2, or 3');
+  }
 
   let query = supabase
     .from('task_events')
@@ -66,7 +75,7 @@ export async function getEscalations(orgId: string, stage?: string): Promise<Esc
   const { data: escalations, error } = await query;
 
   if (error) {
-    throw new EscalationError('ESCALATIONS_FETCH_FAILED', 'Failed to fetch escalations');
+    throw new EscalationError(ErrorCode.ESCALATIONS_FETCH_FAILED, 'Failed to fetch escalations');
   }
 
   return escalations;
@@ -92,7 +101,7 @@ export async function getEscalationsByTask(taskId: string): Promise<EscalationEv
     .order('created_at', { ascending: false });
 
   if (error) {
-    throw new EscalationError('ESCALATIONS_FETCH_FAILED', 'Failed to fetch task escalations');
+    throw new EscalationError(ErrorCode.ESCALATIONS_FETCH_FAILED, 'Failed to fetch task escalations');
   }
 
   return escalations;

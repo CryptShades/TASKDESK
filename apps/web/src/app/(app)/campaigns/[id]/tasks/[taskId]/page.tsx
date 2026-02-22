@@ -16,7 +16,7 @@ import {
   RefreshCw,
   Plus,
 } from 'lucide-react';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/client';
 import { getTaskById } from '@/services/task.service';
 import { Avatar } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/ui/status-badge';

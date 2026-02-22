@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getCurrentUser } from '@/services/auth.client';
-import { getOrganization } from '@/services/organization.client';
+import { getCurrentUser } from '@/services/auth/client';
+import { getOrganization } from '@/services/organization/client';
 import type { Database } from '../../supabase/types';
 
 type User = Database['public']['Tables']['users']['Row'];

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import type { Database } from '../../supabase/types';
+import type { Database } from '../../../supabase/types';
+import { ErrorCode } from '@taskdesk/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -8,7 +9,7 @@ export interface UpdateMemberData {
 }
 
 export class OrganizationError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'OrganizationError';
   }
@@ -24,7 +25,7 @@ export async function getOrganization(orgId: string) {
     .single();
 
   if (error) {
-    throw new OrganizationError('ORG_NOT_FOUND', 'Organization not found');
+    throw new OrganizationError(ErrorCode.ORG_NOT_FOUND, 'Organization not found');
   }
 
   return org;
@@ -40,7 +41,7 @@ export async function getMembers(orgId: string) {
     .order('created_at', { ascending: true });
 
   if (error) {
-    throw new OrganizationError('MEMBERS_FETCH_FAILED', 'Failed to fetch organization members');
+    throw new OrganizationError(ErrorCode.MEMBERS_FETCH_FAILED, 'Failed to fetch organization members');
   }
 
   return members;
@@ -56,7 +57,7 @@ export async function getOrgMembers(orgId: string) {
     .order('name', { ascending: true });
 
   if (error) {
-    throw new OrganizationError('MEMBERS_FETCH_FAILED', 'Failed to fetch organization members');
+    throw new OrganizationError(ErrorCode.MEMBERS_FETCH_FAILED, 'Failed to fetch organization members');
   }
 
   return members;
@@ -73,7 +74,7 @@ export async function updateMemberRole(userId: string, role: UserRole, actorId: 
     .single();
 
   if (!actor || actor.role !== 'founder') {
-    throw new OrganizationError('INSUFFICIENT_PERMISSIONS', 'Only founders can update member roles');
+    throw new OrganizationError(ErrorCode.INSUFFICIENT_PERMISSIONS, 'Only founders can update member roles');
   }
 
   // Get target user to verify same org
@@ -84,7 +85,7 @@ export async function updateMemberRole(userId: string, role: UserRole, actorId: 
     .single();
 
   if (!targetUser) {
-    throw new OrganizationError('USER_NOT_FOUND', 'User not found');
+    throw new OrganizationError(ErrorCode.USER_NOT_FOUND, 'User not found');
   }
 
   // Update role
@@ -96,7 +97,7 @@ export async function updateMemberRole(userId: string, role: UserRole, actorId: 
     .single();
 
   if (error) {
-    throw new OrganizationError('UPDATE_FAILED', 'Failed to update member role');
+    throw new OrganizationError(ErrorCode.UPDATE_FAILED, 'Failed to update member role');
   }
 
   return updatedUser;
@@ -113,12 +114,12 @@ export async function removeMember(userId: string, actorId: string) {
     .single();
 
   if (!actor || actor.role !== 'founder') {
-    throw new OrganizationError('INSUFFICIENT_PERMISSIONS', 'Only founders can remove members');
+    throw new OrganizationError(ErrorCode.INSUFFICIENT_PERMISSIONS, 'Only founders can remove members');
   }
 
   // Cannot remove self
   if (userId === actorId) {
-    throw new OrganizationError('CANNOT_REMOVE_SELF', 'Cannot remove yourself from the organization');
+    throw new OrganizationError(ErrorCode.CANNOT_REMOVE_SELF, 'Cannot remove yourself from the organization');
   }
 
   // Get target user to verify same org
@@ -129,7 +130,7 @@ export async function removeMember(userId: string, actorId: string) {
     .single();
 
   if (!targetUser) {
-    throw new OrganizationError('USER_NOT_FOUND', 'User not found');
+    throw new OrganizationError(ErrorCode.USER_NOT_FOUND, 'User not found');
   }
 
   // Delete user record (this will cascade to auth.users due to RLS)
@@ -139,7 +140,7 @@ export async function removeMember(userId: string, actorId: string) {
     .eq('id', userId);
 
   if (error) {
-    throw new OrganizationError('DELETE_FAILED', 'Failed to remove member');
+    throw new OrganizationError(ErrorCode.DELETE_FAILED, 'Failed to remove member');
   }
 
   return { success: true };
@@ -156,7 +157,7 @@ export async function updateOrganizationName(orgId: string, name: string) {
     .single();
 
   if (error) {
-    throw new OrganizationError('ORG_UPDATE_FAILED', 'Failed to update organization name');
+    throw new OrganizationError(ErrorCode.ORG_UPDATE_FAILED, 'Failed to update organization name');
   }
 
   return data;
@@ -173,7 +174,7 @@ export async function updateUserProfile(userId: string, name: string) {
     .single();
 
   if (error) {
-    throw new OrganizationError('PROFILE_UPDATE_FAILED', 'Failed to update profile name');
+    throw new OrganizationError(ErrorCode.PROFILE_UPDATE_FAILED, 'Failed to update profile name');
   }
 
   return data;
@@ -189,7 +190,7 @@ export async function getPendingInvites(orgId: string) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    throw new OrganizationError('INVITES_FETCH_FAILED', 'Failed to fetch pending invitations');
+    throw new OrganizationError(ErrorCode.INVITES_FETCH_FAILED, 'Failed to fetch pending invitations');
   }
 
   return data;
@@ -211,9 +212,9 @@ export async function createInvitation(orgId: string, email: string, role: UserR
 
   if (error) {
     if (error.code === '23505') {
-      throw new OrganizationError('ALREADY_INVITED', 'An invitation has already been sent to this email');
+      throw new OrganizationError(ErrorCode.ALREADY_INVITED, 'An invitation has already been sent to this email');
     }
-    throw new OrganizationError('INVITE_CREATE_FAILED', 'Failed to create invitation record');
+    throw new OrganizationError(ErrorCode.INVITE_CREATE_FAILED, 'Failed to create invitation record');
   }
 
   return data;
@@ -229,7 +230,7 @@ export async function revokeInvitation(inviteId: string, orgId: string) {
     .eq('org_id', orgId);
 
   if (error) {
-    throw new OrganizationError('INVITE_REVOKE_FAILED', 'Failed to revoke invitation');
+    throw new OrganizationError(ErrorCode.INVITE_REVOKE_FAILED, 'Failed to revoke invitation');
   }
 
   return { success: true };

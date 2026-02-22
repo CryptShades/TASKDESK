@@ -41,3 +41,17 @@ export function isOverdue(date: string | Date): boolean {
   today.setHours(0, 0, 0, 0);
   return new Date(date) < today;
 }
+
+/**
+ * Derive display initials from a single full-name string.
+ * Returns the first letter of each word (up to 2), uppercased.
+ * Example: "Jane Smith" → "JS", "Alice" → "A"
+ */
+export function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join('');
+}

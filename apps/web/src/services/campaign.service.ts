@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '../../supabase/types';
+import { ErrorCode } from '@taskdesk/types';
 
 type CampaignRisk = Database['public']['Enums']['campaign_risk'];
 
@@ -45,7 +46,7 @@ export interface DashboardStats {
 }
 
 export class CampaignError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'CampaignError';
   }
@@ -65,7 +66,7 @@ export async function getCampaigns(orgId: string): Promise<CampaignWithStats[]> 
     .order('launch_date', { ascending: true });
 
   if (campaignsError) {
-    throw new CampaignError('CAMPAIGNS_FETCH_FAILED', 'Failed to fetch campaigns');
+    throw new CampaignError(ErrorCode.CAMPAIGNS_FETCH_FAILED, 'Failed to fetch campaigns');
   }
 
   // Get task stats for each campaign
@@ -80,7 +81,7 @@ export async function getCampaigns(orgId: string): Promise<CampaignWithStats[]> 
     .in('campaign_id', campaignIds);
 
   if (statsError) {
-    throw new CampaignError('STATS_FETCH_FAILED', 'Failed to fetch task statistics');
+    throw new CampaignError(ErrorCode.STATS_FETCH_FAILED, 'Failed to fetch task statistics');
   }
 
   // Calculate stats per campaign
@@ -119,7 +120,7 @@ export async function getCampaignById(id: string, orgId: string) {
     .single();
 
   if (error) {
-    throw new CampaignError('CAMPAIGN_NOT_FOUND', 'Campaign not found');
+    throw new CampaignError(ErrorCode.CAMPAIGN_NOT_FOUND, 'Campaign not found');
   }
 
   return campaign;
@@ -130,7 +131,7 @@ export async function createCampaign(data: CreateCampaignData, orgId: string, ac
 
   // Validate launch_date is in the future
   if (new Date(data.launch_date) <= new Date()) {
-    throw new CampaignError('INVALID_LAUNCH_DATE', 'Launch date must be in the future');
+    throw new CampaignError(ErrorCode.INVALID_LAUNCH_DATE, 'Launch date must be in the future');
   }
 
   const { data: campaign, error } = await supabase
@@ -144,7 +145,7 @@ export async function createCampaign(data: CreateCampaignData, orgId: string, ac
     .single();
 
   if (error) {
-    throw new CampaignError('CAMPAIGN_CREATE_FAILED', 'Failed to create campaign');
+    throw new CampaignError(ErrorCode.CAMPAIGN_CREATE_FAILED, 'Failed to create campaign');
   }
 
   return campaign;
@@ -155,7 +156,7 @@ export async function updateCampaign(id: string, data: UpdateCampaignData, orgId
 
   // Validate launch_date if provided
   if (data.launch_date && new Date(data.launch_date) <= new Date()) {
-    throw new CampaignError('INVALID_LAUNCH_DATE', 'Launch date must be in the future');
+    throw new CampaignError(ErrorCode.INVALID_LAUNCH_DATE, 'Launch date must be in the future');
   }
 
   const { data: campaign, error } = await supabase
@@ -167,7 +168,7 @@ export async function updateCampaign(id: string, data: UpdateCampaignData, orgId
     .single();
 
   if (error) {
-    throw new CampaignError('CAMPAIGN_UPDATE_FAILED', 'Failed to update campaign');
+    throw new CampaignError(ErrorCode.CAMPAIGN_UPDATE_FAILED, 'Failed to update campaign');
   }
 
   return campaign;
@@ -184,7 +185,7 @@ export async function deleteCampaign(id: string, orgId: string, actorId: string)
     .single();
 
   if (!actor || actor.role !== 'founder') {
-    throw new CampaignError('INSUFFICIENT_PERMISSIONS', 'Only founders can delete campaigns');
+    throw new CampaignError(ErrorCode.INSUFFICIENT_PERMISSIONS, 'Only founders can delete campaigns');
   }
 
   const { error } = await supabase
@@ -194,7 +195,7 @@ export async function deleteCampaign(id: string, orgId: string, actorId: string)
     .eq('org_id', orgId);
 
   if (error) {
-    throw new CampaignError('CAMPAIGN_DELETE_FAILED', 'Failed to delete campaign');
+    throw new CampaignError(ErrorCode.CAMPAIGN_DELETE_FAILED, 'Failed to delete campaign');
   }
 
   return { success: true };
@@ -210,7 +211,7 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats> 
     .eq('org_id', orgId);
 
   if (campaignsError) {
-    throw new CampaignError('STATS_FETCH_FAILED', 'Failed to fetch dashboard statistics');
+    throw new CampaignError(ErrorCode.STATS_FETCH_FAILED, 'Failed to fetch dashboard statistics');
   }
 
   const riskCounts = campaigns.reduce(
@@ -231,7 +232,7 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats> 
     .or('status.eq.blocked,and(due_date.lt.' + new Date().toISOString() + ',status.neq.completed)');
 
   if (stalledError) {
-    throw new CampaignError('STATS_FETCH_FAILED', 'Failed to fetch stalled tasks count');
+    throw new CampaignError(ErrorCode.STATS_FETCH_FAILED, 'Failed to fetch stalled tasks count');
   }
 
   return {

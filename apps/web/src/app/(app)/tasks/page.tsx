@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/client';
 import { getMyTasks } from '@/services/task.service';
 import { PageHeader } from '@/components/ui/page-header';
 import { MyTasksView } from '@/components/tasks/my-tasks-view';

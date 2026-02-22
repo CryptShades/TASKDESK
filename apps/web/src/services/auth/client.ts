@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/client';
-import type { Database } from '../../supabase/types';
+import type { Database } from '../../../supabase/types';
+import { ErrorCode } from '@taskdesk/types';
 
 type User = Database['public']['Tables']['users']['Row'];
 
 export class AuthError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'AuthError';
   }
@@ -15,7 +16,7 @@ export async function getCurrentUser(): Promise<User> {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    throw new AuthError('NOT_AUTHENTICATED', 'User is not authenticated');
+    throw new AuthError(ErrorCode.NOT_AUTHENTICATED, 'User is not authenticated');
   }
 
   const { data: userData, error: userError } = await supabase
@@ -25,7 +26,7 @@ export async function getCurrentUser(): Promise<User> {
     .single();
 
   if (userError || !userData) {
-    throw new AuthError('USER_NOT_FOUND', 'User profile not found');
+    throw new AuthError(ErrorCode.USER_NOT_FOUND, 'User profile not found');
   }
 
   return userData;
@@ -36,6 +37,6 @@ export async function signOut() {
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    throw new AuthError('SIGN_OUT_FAILED', 'Failed to sign out');
+    throw new AuthError(ErrorCode.SIGN_OUT_FAILED, 'Failed to sign out');
   }
 }

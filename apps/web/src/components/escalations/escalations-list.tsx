@@ -64,7 +64,10 @@ const STAGE_CONFIG: Record<string, { label: string; color: string; icon: any; bo
   },
 };
 
-type FilterType = 'all' | 'stage_1' | 'stage_2' | 'stage_3' | 'resolved';
+// Stage filter values match the valid API ?stage= query param values ('1' | '2' | '3').
+const ESCALATION_STAGE_VALUES = ['1', '2', '3'] as const;
+type EscalationStageFilter = typeof ESCALATION_STAGE_VALUES[number];
+type FilterType = 'all' | EscalationStageFilter | 'resolved';
 
 export function EscalationsList({ initialEscalations }: Props) {
   const [filter, setFilter] = useState<FilterType>('all');
@@ -79,7 +82,7 @@ export function EscalationsList({ initialEscalations }: Props) {
   const filteredEscalations = useMemo(() => {
     let list = filter === 'resolved' ? resolved : active;
     if (filter !== 'all' && filter !== 'resolved') {
-      list = list.filter(e => e.event_type === `escalation_${filter}`);
+      list = list.filter(e => e.event_type === `escalation_stage_${filter}`);
     }
     return list;
   }, [active, resolved, filter]);
@@ -102,9 +105,9 @@ export function EscalationsList({ initialEscalations }: Props) {
 
   const tabs: { id: FilterType; label: string; count?: number }[] = [
     { id: 'all', label: 'All', count: active.length },
-    { id: 'stage_1', label: 'Stage 1', count: active.filter(e => e.event_type === 'escalation_stage_1').length },
-    { id: 'stage_2', label: 'Stage 2', count: active.filter(e => e.event_type === 'escalation_stage_2').length },
-    { id: 'stage_3', label: 'Stage 3', count: active.filter(e => e.event_type === 'escalation_stage_3').length },
+    { id: '1', label: 'Stage 1', count: active.filter(e => e.event_type === 'escalation_stage_1').length },
+    { id: '2', label: 'Stage 2', count: active.filter(e => e.event_type === 'escalation_stage_2').length },
+    { id: '3', label: 'Stage 3', count: active.filter(e => e.event_type === 'escalation_stage_3').length },
     { id: 'resolved', label: 'Resolved', count: resolved.length },
   ];
 

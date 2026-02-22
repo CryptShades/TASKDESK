@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/services/auth.service';
-import { getFounderDashboard } from '@/services/dashboard.service';
+import { getCurrentUser } from '@/services/auth/client';
+import { getFounderDashboard } from '@/services/dashboard/server';
 import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
 import { CampaignRiskTable } from '@/components/dashboard/campaign-risk-table';
 import { DependencyAlertFeed } from '@/components/dashboard/dependency-alert-feed';

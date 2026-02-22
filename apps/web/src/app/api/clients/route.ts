@@ -1,5 +1,6 @@
+import { ErrorCode } from '@taskdesk/types';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/server';
 import { getClients, createClient } from '@/services/client.service';
 
 export async function GET(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (!name) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_NAME', message: 'Client name is required' } },
+        { data: null, error: { code: ErrorCode.MISSING_NAME, message: 'Client name is required' } },
         { status: 400 }
       );
     }

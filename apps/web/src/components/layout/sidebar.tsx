@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/context/user-context';
 import { useRealtime } from '@/context/realtime-context';
-import { signOut } from '@/services/auth.client';
+import { signOut } from '@/services/auth/client';
 import {
   BarChart3,
   Users,

@@ -44,7 +44,7 @@ describe('Risk Engine', () => {
       return { data: [] };
     });
 
-    const result = await runRiskEngine(mockSupabase as unknown as SupabaseClient, 'org-1');
+    const result = await runRiskEngine(mockSupabase as unknown as SupabaseClient, { orgId: 'org-1' });
     expect(mockSupabase.from).toHaveBeenCalledWith('tasks');
     expect(mockSupabase.update).toHaveBeenCalledWith({ risk_flag: 'soft_risk' });
   });
@@ -69,7 +69,7 @@ describe('Risk Engine', () => {
       return { data: [] };
     });
 
-    await runRiskEngine(mockSupabase as unknown as SupabaseClient, 'org-1');
+    await runRiskEngine(mockSupabase as unknown as SupabaseClient, { orgId: 'org-1' });
     expect(mockSupabase.update).toHaveBeenCalledWith({ risk_flag: 'hard_risk' });
   });
 
@@ -92,7 +92,7 @@ describe('Risk Engine', () => {
       return { data: [] };
     });
 
-    await runRiskEngine(mockSupabase as unknown as SupabaseClient, 'org-1');
+    await runRiskEngine(mockSupabase as unknown as SupabaseClient, { orgId: 'org-1' });
     expect(mockSupabase.update).toHaveBeenCalledWith({ risk_status: 'high_risk' });
   });
 });

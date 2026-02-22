@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
+import { ErrorCode } from '@taskdesk/types';
+import { getCurrentUser } from '@/services/auth/server';
 import { getTaskById } from '@/services/task.service';
 
 export async function GET(
@@ -17,7 +18,7 @@ export async function GET(
   } catch (error: any) {
     return NextResponse.json(
       { data: null, error: { code: error.code || 'INTERNAL_ERROR', message: error.message } },
-      { status: error.code === 'TASK_NOT_FOUND' ? 404 : 500 }
+      { status: error.code === ErrorCode.TASK_NOT_FOUND ? 404 : 500 }
     );
   }
 }

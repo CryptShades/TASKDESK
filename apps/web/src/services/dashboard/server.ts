@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import type { Database } from '../../supabase/types';
+import type { Database } from '../../../supabase/types';
+import { ErrorCode } from '@taskdesk/types';
 
 type CampaignRisk = Database['public']['Enums']['campaign_risk'];
 
@@ -39,7 +40,7 @@ export interface DependencyAlert {
 }
 
 export class DashboardError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'DashboardError';
   }
@@ -74,7 +75,7 @@ async function getDashboardMetrics(orgId: string) {
     .eq('org_id', orgId);
 
   if (campaignsError) {
-    throw new DashboardError('METRICS_FETCH_FAILED', 'Failed to fetch dashboard metrics');
+    throw new DashboardError(ErrorCode.METRICS_FETCH_FAILED, 'Failed to fetch dashboard metrics');
   }
 
   const riskCounts = campaigns.reduce(
@@ -95,7 +96,7 @@ async function getDashboardMetrics(orgId: string) {
     .or('status.eq.blocked,and(due_date.lt.' + new Date().toISOString() + ',status.neq.completed)');
 
   if (stalledError) {
-    throw new DashboardError('METRICS_FETCH_FAILED', 'Failed to fetch stalled tasks count');
+    throw new DashboardError(ErrorCode.METRICS_FETCH_FAILED, 'Failed to fetch stalled tasks count');
   }
 
   return {
@@ -121,7 +122,7 @@ async function getCampaignsWithTaskCounts(orgId: string) {
     .order('launch_date', { ascending: true });
 
   if (campaignsError) {
-    throw new DashboardError('CAMPAIGNS_FETCH_FAILED', 'Failed to fetch campaigns');
+    throw new DashboardError(ErrorCode.CAMPAIGNS_FETCH_FAILED, 'Failed to fetch campaigns');
   }
 
   // Get task counts for all campaigns
@@ -132,7 +133,7 @@ async function getCampaignsWithTaskCounts(orgId: string) {
     .in('campaign_id', campaignIds);
 
   if (tasksError) {
-    throw new DashboardError('TASKS_FETCH_FAILED', 'Failed to fetch task counts');
+    throw new DashboardError(ErrorCode.TASKS_FETCH_FAILED, 'Failed to fetch task counts');
   }
 
   // Calculate task counts per campaign
@@ -189,7 +190,7 @@ export async function getDependencyAlerts(orgId: string): Promise<DependencyAler
       .not('dependency_id', 'is', null);
 
     if (tasksError) {
-      throw new DashboardError('ALERTS_FETCH_FAILED', 'Failed to fetch dependency alerts');
+      throw new DashboardError(ErrorCode.ALERTS_FETCH_FAILED, 'Failed to fetch dependency alerts');
     }
 
     const alerts = (tasks as any[])

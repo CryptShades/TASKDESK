@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
-import { getFounderDashboard } from '@/services/dashboard.service';
+import { getCurrentUser } from '@/services/auth/server';
+import { getFounderDashboard } from '@/services/dashboard/server';
 
 export async function GET(request: NextRequest) {
   try {

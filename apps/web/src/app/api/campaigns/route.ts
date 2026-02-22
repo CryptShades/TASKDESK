@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
+import { ErrorCode } from '@taskdesk/types';
+import { getCurrentUser } from '@/services/auth/server';
 import { getCampaigns, createCampaign } from '@/services/campaign.service';
 
 export async function GET(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (!client_id || !name || !launch_date) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_FIELDS', message: 'Client ID, name, and launch date are required' } },
+        { data: null, error: { code: ErrorCode.MISSING_FIELDS, message: 'Client ID, name, and launch date are required' } },
         { status: 400 }
       );
     }

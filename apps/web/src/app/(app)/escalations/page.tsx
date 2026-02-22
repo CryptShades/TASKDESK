@@ -1,5 +1,5 @@
 import { redirect, notFound } from 'next/navigation';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/client';
 import { getEscalations } from '@/services/escalation.service';
 import { PageHeader } from '@/components/ui/page-header';
 import { EscalationsList } from '@/components/escalations/escalations-list';

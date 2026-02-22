@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/client';
 import { getCampaignById } from '@/services/campaign.service';
 import { RiskBadge } from '@/components/ui/risk-badge';
 import { CampaignTaskList } from '@/components/campaigns/campaign-task-list';

@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { ErrorCode } from '@taskdesk/types';
 
 export interface CreateNotificationData {
   org_id: string;
@@ -10,7 +12,7 @@ export interface CreateNotificationData {
 }
 
 export class NotificationError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(public code: ErrorCode, message: string) {
     super(message);
     this.name = 'NotificationError';
   }
@@ -31,7 +33,7 @@ export async function getNotifications(userId: string) {
     .limit(50);
 
   if (error) {
-    throw new NotificationError('NOTIFICATIONS_FETCH_FAILED', 'Failed to fetch notifications');
+    throw new NotificationError(ErrorCode.NOTIFICATIONS_FETCH_FAILED, 'Failed to fetch notifications');
   }
 
   return notifications;
@@ -49,14 +51,15 @@ export async function markAsRead(notificationId: string, userId: string) {
     .single();
 
   if (error) {
-    throw new NotificationError('NOTIFICATION_UPDATE_FAILED', 'Failed to mark notification as read');
+    throw new NotificationError(ErrorCode.NOTIFICATION_UPDATE_FAILED, 'Failed to mark notification as read');
   }
 
   return notification;
 }
 
 export async function createNotification(data: CreateNotificationData) {
-  const supabase = createClient();
+  // Use admin client for INSERT operations since RLS policy only allows service role inserts
+  const supabase = createAdminClient();
 
   const { data: notification, error } = await supabase
     .from('notifications')
@@ -65,7 +68,7 @@ export async function createNotification(data: CreateNotificationData) {
     .single();
 
   if (error) {
-    throw new NotificationError('NOTIFICATION_CREATE_FAILED', 'Failed to create notification');
+    throw new NotificationError(ErrorCode.NOTIFICATION_CREATE_FAILED, 'Failed to create notification');
   }
 
   return notification;
@@ -82,7 +85,7 @@ export async function registerPushToken(userId: string, token: string) {
     .single();
 
   if (error) {
-    throw new NotificationError('TOKEN_UPDATE_FAILED', 'Failed to register push token');
+    throw new NotificationError(ErrorCode.TOKEN_UPDATE_FAILED, 'Failed to register push token');
   }
 
   return user;
@@ -150,7 +153,7 @@ export async function markAllAsRead(userId: string) {
     .eq('read', false);
 
   if (error) {
-    throw new NotificationError('NOTIFICATION_UPDATE_FAILED', 'Failed to mark all notifications as read');
+    throw new NotificationError(ErrorCode.NOTIFICATION_UPDATE_FAILED, 'Failed to mark all notifications as read');
   }
 
   return { success: true };

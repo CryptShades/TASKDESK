@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/client';
 import { getCampaigns } from '@/services/campaign.service';
 import { CampaignListTable } from '@/components/campaigns/campaign-list-table';
 

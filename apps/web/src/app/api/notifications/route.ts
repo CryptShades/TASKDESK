@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
+import { ErrorCode } from '@taskdesk/types';
+import { getCurrentUser } from '@/services/auth/server';
 import { getNotifications, registerPushToken } from '@/services/notification.service';
 
 export async function GET(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_TOKEN', message: 'Push token is required' } },
+        { data: null, error: { code: ErrorCode.MISSING_TOKEN, message: 'Push token is required' } },
         { status: 400 }
       );
     }

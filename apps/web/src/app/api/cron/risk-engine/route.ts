@@ -1,20 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { runRiskEngine } from '@/workers/risk-engine';
+import { validateCronRequest } from '@/lib/cron-auth';
+import { readCursorState } from '@/lib/worker-lock';
 
 export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const auth = validateCronRequest(request);
+  if (!auth.authorized) return auth.response;
 
+  try {
     const supabase = createClient();
+
+    // Read cursor state before running to log pagination progress
+    const { lastProcessedOrgId: previousCursor, pageSize } = await readCursorState(supabase, 'risk_engine');
+    const estimatedProgressMsg = previousCursor
+      ? `Continuing from org ${previousCursor}`
+      : 'Starting from beginning';
+
     const result = await runRiskEngine(supabase);
 
-    return NextResponse.json({ 
-      success: true, 
-      stats: result 
+    return NextResponse.json({
+      success: true,
+      stats: result,
+      pagination: {
+        batchSize: result.processedOrgs,
+        pageSize,
+        previousCursor,
+        estimatedProgress: estimatedProgressMsg,
+      },
     });
   } catch (error: any) {
     console.error('Risk Engine Cron Error:', error);
@@ -24,3 +37,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

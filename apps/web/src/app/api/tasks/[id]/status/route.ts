@@ -1,6 +1,10 @@
+import { ErrorCode } from '@taskdesk/types';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/services/auth.service';
+import { getCurrentUser } from '@/services/auth/server';
 import { updateTaskStatus } from '@/services/task.service';
+
+const VALID_TASK_STATUSES = ['not_started', 'in_progress', 'completed', 'blocked'] as const;
+type TaskStatus = typeof VALID_TASK_STATUSES[number];
 
 export async function PATCH(
   request: NextRequest,
@@ -12,13 +16,20 @@ export async function PATCH(
 
     if (!status) {
       return NextResponse.json(
-        { data: null, error: { code: 'MISSING_STATUS', message: 'Status is required' } },
+        { data: null, error: { code: ErrorCode.MISSING_STATUS, message: 'Status is required' } },
+        { status: 400 }
+      );
+    }
+
+    if (!(VALID_TASK_STATUSES as readonly string[]).includes(status)) {
+      return NextResponse.json(
+        { data: null, error: { code: ErrorCode.INVALID_STATUS, message: 'Status must be not_started, in_progress, completed, or blocked' } },
         { status: 400 }
       );
     }
 
     const currentUser = await getCurrentUser();
-    const result = await updateTaskStatus(params.id, status, currentUser.id, currentUser.org_id);
+    const result = await updateTaskStatus(params.id, status as TaskStatus, currentUser.id, currentUser.org_id);
 
     return NextResponse.json(
       { data: result, error: null },
