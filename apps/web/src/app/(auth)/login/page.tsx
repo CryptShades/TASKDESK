@@ -71,6 +71,11 @@ export default function LoginPage() {
             type: 'invalid_credentials',
             message: 'Invalid email or password. Check your credentials and try again.',
           });
+        } else if (msg.includes('database error querying schema')) {
+          setAlert({
+            type: 'generic',
+            message: 'Database schema is incomplete. Run COMPLETE_SETUP.sql in Supabase SQL Editor, then try again.',
+          });
         } else if (msg.includes('email not confirmed')) {
           setAlert({
             type: 'unconfirmed',

@@ -106,7 +106,7 @@ export default async function TaskDetailPage({ params }: PageProps) {
   try {
     user = await getCurrentUser();
   } catch {
-    redirect('/auth/signin');
+    redirect('/login');
   }
 
   let task: Awaited<ReturnType<typeof getTaskById>>;

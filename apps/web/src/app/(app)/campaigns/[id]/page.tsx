@@ -63,7 +63,7 @@ export default async function CampaignDetailPage({
   try {
     user = await getCurrentUser();
   } catch {
-    redirect('/auth/signin');
+    redirect('/login');
   }
 
   let campaign: Awaited<ReturnType<typeof getCampaignById>>;

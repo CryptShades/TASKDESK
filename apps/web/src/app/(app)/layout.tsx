@@ -16,7 +16,7 @@ export default function AppLayout({
 
   useEffect(() => {
     if (!isLoading && !currentUser) {
-      router.push('/auth/signin');
+      router.push('/login');
     }
   }, [currentUser, isLoading, router]);
 

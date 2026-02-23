@@ -14,7 +14,7 @@ export default async function EscalationsPage() {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
-    redirect('/auth/signin');
+    redirect('/login');
   }
 
   // Founder only access

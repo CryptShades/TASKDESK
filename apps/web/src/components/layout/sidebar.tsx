@@ -105,7 +105,7 @@ export function Sidebar() {
   async function handleSignOut() {
     try {
       await signOut();
-      router.push('/auth/signin');
+      router.push('/login');
     } catch (error) {
       console.error('Failed to sign out:', error);
     }

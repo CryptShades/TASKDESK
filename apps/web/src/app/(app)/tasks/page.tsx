@@ -14,7 +14,7 @@ export default async function MyTasksPage() {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
-    redirect('/auth/signin');
+    redirect('/login');
   }
 
   const tasks = await getMyTasks(currentUser.id, currentUser.org_id);

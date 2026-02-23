@@ -1,6 +1,8 @@
 -- Taskdesk seed data
 -- Run after migrations in Supabase SQL editor
 
+create extension if not exists pgcrypto;
+
 begin;
 
 -- 1 org
@@ -21,6 +23,10 @@ insert into auth.users (
   email,
   encrypted_password,
   email_confirmed_at,
+  confirmation_token,
+  email_change,
+  email_change_token_new,
+  recovery_token,
   raw_app_meta_data,
   raw_user_meta_data,
   created_at,
@@ -35,6 +41,10 @@ values
     'ava.founder@taskdesk.dev',
     crypt('password123', gen_salt('bf')),
     now(),
+    '',
+    '',
+    '',
+    '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"name":"Ava Founder"}'::jsonb,
     now(),
@@ -48,6 +58,10 @@ values
     'mason.manager@taskdesk.dev',
     crypt('password123', gen_salt('bf')),
     now(),
+    '',
+    '',
+    '',
+    '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"name":"Mason Manager"}'::jsonb,
     now(),
@@ -61,6 +75,10 @@ values
     'nora.manager@taskdesk.dev',
     crypt('password123', gen_salt('bf')),
     now(),
+    '',
+    '',
+    '',
+    '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"name":"Nora Manager"}'::jsonb,
     now(),
@@ -74,6 +92,10 @@ values
     'liam.member@taskdesk.dev',
     crypt('password123', gen_salt('bf')),
     now(),
+    '',
+    '',
+    '',
+    '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"name":"Liam Member"}'::jsonb,
     now(),
@@ -87,6 +109,10 @@ values
     'zoe.member@taskdesk.dev',
     crypt('password123', gen_salt('bf')),
     now(),
+    '',
+    '',
+    '',
+    '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"name":"Zoe Member"}'::jsonb,
     now(),
@@ -100,12 +126,26 @@ values
     'owen.member@taskdesk.dev',
     crypt('password123', gen_salt('bf')),
     now(),
+    '',
+    '',
+    '',
+    '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"name":"Owen Member"}'::jsonb,
     now(),
     now()
   )
-on conflict (id) do nothing;
+on conflict (id) do update set
+  email = excluded.email,
+  encrypted_password = excluded.encrypted_password,
+  email_confirmed_at = excluded.email_confirmed_at,
+  confirmation_token = excluded.confirmation_token,
+  email_change = excluded.email_change,
+  email_change_token_new = excluded.email_change_token_new,
+  recovery_token = excluded.recovery_token,
+  raw_app_meta_data = excluded.raw_app_meta_data,
+  raw_user_meta_data = excluded.raw_user_meta_data,
+  updated_at = excluded.updated_at;
 
 -- 1 founder, 2 managers, 3 members
 insert into public.users (id, org_id, name, email, role, expo_push_token, created_at)
