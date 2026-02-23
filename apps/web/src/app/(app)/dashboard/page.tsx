@@ -18,21 +18,33 @@ export default async function DashboardPage() {
   const data = await getFounderDashboard(user.org_id);
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+    <div className="mx-auto max-w-7xl space-y-8 p-6">
+      <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-[28px] font-semibold leading-tight text-foreground">
+            Founder Risk Command Center
+          </h1>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Structured visibility into campaign execution risk and escalation priority.
+          </p>
+        </div>
         <LastUpdated />
       </div>
 
-      {/* Row 1 — Metric cards (4-up on desktop, 2-up on tablet/mobile) */}
-      <DashboardMetrics initialMetrics={data.metrics} />
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold text-foreground">Risk Summary</h2>
+        <DashboardMetrics initialMetrics={data.metrics} />
+      </section>
 
-      {/* Row 2 — 65/35 split on desktop, stacked on tablet/mobile */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[65fr_35fr]">
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold text-foreground">Campaign Risk Table</h2>
         <CampaignRiskTable initialData={data.campaigns} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold text-foreground">Immediate Attention</h2>
         <DependencyAlertFeed initialAlerts={data.dependency_alerts} />
-      </div>
+      </section>
     </div>
   );
 }

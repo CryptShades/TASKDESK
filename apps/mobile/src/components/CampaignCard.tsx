@@ -59,7 +59,7 @@ export function CampaignCard({
 
   return (
     <TouchableOpacity 
-      style={[styles.card, { borderLeftColor: getRiskColor() }]}
+      style={[styles.card, { borderColor: getRiskColor() }]}
       onPress={() => router.push(`/(tabs)/campaigns/${id}`)}
       activeOpacity={0.7}
     >
@@ -88,11 +88,11 @@ export function CampaignCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.roundness.md,
-    borderLeftWidth: 3,
+    padding: theme.spacing.lg,
+    borderRadius: theme.roundness.lg,
+    borderWidth: 1,
     marginBottom: theme.spacing.md,
-    minHeight: 80,
+    minHeight: 96,
   },
   topRow: {
     flexDirection: 'row',
@@ -101,13 +101,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   name: {
-    ...theme.typography.body,
+    ...theme.typography.h3,
     fontWeight: '600',
     color: theme.colors.foreground,
     flex: 1,
   },
   clientInfo: {
-    ...theme.typography.small,
+    ...theme.typography.label,
     color: theme.colors.foregroundMuted,
     marginBottom: theme.spacing.sm,
   },
@@ -117,13 +117,12 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
   },
   stat: {
-    ...theme.typography.small,
-    fontSize: 10,
+    ...theme.typography.label,
     color: theme.colors.foregroundMuted,
   },
   statDivider: {
     color: theme.colors.foregroundMuted,
-    fontSize: 10,
+    fontSize: 12,
   },
   overdue: {
     color: theme.colors.riskHard,

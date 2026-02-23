@@ -27,35 +27,45 @@ export function RiskBadge({ variant, size = 'sm' }: RiskBadgeProps) {
 }
 
 function getStyles(variant: RiskVariant, size: 'sm' | 'md') {
-  const colors: Record<RiskVariant, string> = {
-    hard: theme.colors.riskHard,
-    soft: theme.colors.riskSoft,
-    normal: theme.colors.riskNormal,
-    blocked: theme.colors.riskBlocked,
-  };
-
-  const bgColors: Record<RiskVariant, string> = {
-    hard: 'rgba(229, 57, 53, 0.1)',
-    soft: 'rgba(245, 166, 35, 0.1)',
-    normal: 'rgba(45, 158, 96, 0.1)',
-    blocked: 'rgba(156, 111, 228, 0.1)',
+  const stylesByVariant: Record<RiskVariant, { backgroundColor: string; borderColor: string; color: string }> = {
+    hard: {
+      backgroundColor: theme.colors.riskHard,
+      borderColor: theme.colors.riskHard,
+      color: theme.colors.white,
+    },
+    soft: {
+      backgroundColor: theme.colors.riskSoft,
+      borderColor: theme.colors.riskSoft,
+      color: '#1C1E23',
+    },
+    normal: {
+      backgroundColor: theme.colors.transparent,
+      borderColor: theme.colors.riskNormal,
+      color: theme.colors.riskNormal,
+    },
+    blocked: {
+      backgroundColor: theme.colors.transparent,
+      borderColor: theme.colors.riskBlocked,
+      color: theme.colors.riskBlocked,
+    },
   };
 
   return StyleSheet.create({
     badge: {
-      backgroundColor: bgColors[variant],
-      borderColor: colors[variant],
+      backgroundColor: stylesByVariant[variant].backgroundColor,
+      borderColor: stylesByVariant[variant].borderColor,
       borderWidth: 1,
       borderRadius: theme.roundness.full,
-      paddingHorizontal: size === 'sm' ? 8 : 12,
-      paddingVertical: size === 'sm' ? 2 : 4,
+      paddingHorizontal: size === 'sm' ? 10 : 12,
+      paddingVertical: size === 'sm' ? 4 : 6,
       alignSelf: 'flex-start',
     },
     text: {
-      color: colors[variant],
-      fontSize: size === 'sm' ? 10 : 12,
-      fontWeight: '600',
+      ...theme.typography.badge,
+      color: stylesByVariant[variant].color,
+      fontSize: size === 'sm' ? 11 : 12,
       textTransform: 'uppercase',
+      letterSpacing: 0.4,
     },
   });
 }

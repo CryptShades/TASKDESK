@@ -30,7 +30,7 @@ export function LastUpdated() {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-foreground-muted">
+      <span className="text-xs font-medium text-foreground-muted">
         Last updated:{' '}
         {minutesAgo === 0 ? 'Just now' : `${minutesAgo} min ago`}
       </span>
@@ -39,7 +39,7 @@ export function LastUpdated() {
           router.refresh();
           setMinutesAgo(0);
         }}
-        className="flex items-center gap-1 text-xs text-primary hover:underline"
+        className="inline-flex h-9 items-center gap-1 rounded-[10px] border border-border px-3 text-xs font-semibold text-foreground hover:bg-surface-raised focus:outline-none focus:ring-2 focus:ring-primary"
       >
         <RotateCw className="w-3 h-3" />
         Refresh

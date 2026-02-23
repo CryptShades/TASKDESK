@@ -6,39 +6,40 @@
 
 @layer base {
   :root {
-    --background: 220 16% 8%;
-    --surface: 220 14% 11%;
-    --surface-raised: 220 13% 14%;
-    --surface-overlay: 220 12% 18%;
-    --foreground: 210 20% 92%;
-    --foreground-muted: 215 12% 55%;
-    --foreground-subtle: 215 10% 38%;
-    --primary: 217 91% 60%;
+    --background: 220 17% 8%;
+    --surface: 223 18% 12%;
+    --surface-raised: 220 17% 15%;
+    --surface-overlay: 220 16% 19%;
+    --foreground: 216 33% 97%;
+    --foreground-muted: 220 10% 65%;
+    --foreground-subtle: 220 9% 46%;
+    --primary: 244 75% 59%;
     --primary-foreground: 0 0% 100%;
-    --primary-muted: 217 60% 20%;
-    --risk-normal: 152 60% 40%;
-    --risk-normal-bg: 152 50% 10%;
-    --risk-normal-border: 152 50% 22%;
-    --risk-soft: 38 90% 52%;
-    --risk-soft-bg: 38 70% 10%;
-    --risk-soft-border: 38 70% 25%;
-    --risk-hard: 4 86% 58%;
-    --risk-hard-bg: 4 70% 10%;
-    --risk-hard-border: 4 65% 28%;
-    --risk-blocked: 270 60% 58%;
-    --risk-blocked-bg: 270 50% 10%;
-    --risk-blocked-border: 270 50% 25%;
+    --primary-muted: 244 43% 32%;
+    --risk-normal: 157 72% 42%;
+    --risk-normal-bg: 157 48% 16%;
+    --risk-normal-border: 157 55% 40%;
+    --risk-soft: 38 91% 55%;
+    --risk-soft-bg: 38 86% 24%;
+    --risk-soft-border: 38 78% 40%;
+    --risk-hard: 358 75% 59%;
+    --risk-hard-bg: 358 66% 50%;
+    --risk-hard-border: 358 69% 58%;
+    --risk-blocked: 258 90% 66%;
+    --risk-blocked-bg: 258 56% 20%;
+    --risk-blocked-border: 258 77% 58%;
     --border: 220 14% 20%;
-    --border-strong: 220 14% 28%;
-    --input: 220 14% 14%;
-    --ring: 217 91% 60%;
-    --status-pending: 215 12% 50%;
-    --status-active: 217 91% 60%;
-    --status-completed: 152 60% 40%;
-    --status-overdue: 4 86% 58%;
-    --radius: 6px;
-    --radius-sm: 4px;
-    --radius-lg: 10px;
+    --border-strong: 220 13% 26%;
+    --input: 220 17% 15%;
+    --ring: 244 75% 59%;
+    --status-pending: 220 9% 46%;
+    --status-active: 157 72% 42%;
+    --status-completed: 220 9% 46%;
+    --status-overdue: 358 75% 59%;
+    --radius: 10px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --panel-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   }
 
   * {
@@ -48,6 +49,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: 0;
   }
 
   .font-mono {

@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, AlertOctagon } from 'lucide-react';
-import { useRealtime } from '@/context/realtime-context';
-import { cn } from '@/lib/utils';
+import { AlertOctagon } from 'lucide-react';
 
 interface AlertItem {
   id: string;
@@ -17,154 +15,68 @@ interface Props {
   initialAlerts: AlertItem[];
 }
 
-const MAX_VISIBLE = 8;
-
-/** Gap > 24h escalates to high-risk severity */
-function alertSeverity(gapHours: number): 'soft' | 'hard' {
-  return gapHours > 24 ? 'hard' : 'soft';
-}
-
-async function fetchAlerts(): Promise<AlertItem[]> {
-  try {
-    const res = await fetch('/api/dashboard/dependency-alerts');
-    if (!res.ok) return [];
-    const body = await res.json();
-    return body.data ?? [];
-  } catch {
-    return [];
-  }
-}
+const HARD_RISK_GAP_HOURS = 24;
 
 export function DependencyAlertFeed({ initialAlerts }: Props) {
-  const [allAlerts, setAllAlerts] = useState<AlertItem[]>(initialAlerts);
-  const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
-  const { isConnected } = useRealtime();
-
-  useEffect(() => {
-    const handleUpdate = async (e: any) => {
-      const payload = e.detail;
-      const { eventType, new: next, old: prev } = payload;
-
-      // Task picked up / resolved → remove from feed immediately
-      if (
-        eventType === 'UPDATE' &&
-        next?.id &&
-        prev?.status === 'not_started' &&
-        next.status !== 'not_started'
-      ) {
-        setAllAlerts((current) => current.filter((a) => a.id !== next.id));
-      }
-
-      // A dependency completed → new gaps may have appeared; refresh from server
-      if (
-        eventType === 'UPDATE' &&
-        next?.status === 'completed' &&
-        prev?.status !== 'completed'
-      ) {
-        const fresh = await fetchAlerts();
-        if (fresh.length === 0) return;
-
-        setAllAlerts((current) => {
-          const currentIds = new Set(current.map((a) => a.id));
-          const newItems = fresh.filter((a) => !currentIds.has(a.id));
-          const existingItems = fresh.filter((a) => currentIds.has(a.id));
-          // New items bubble to top
-          const merged = [...newItems, ...existingItems];
-
-          if (newItems.length > 0) {
-            const ids = newItems.map((a) => a.id);
-            setFlashIds((prev) => new Set([...prev, ...ids]));
-            setTimeout(() => {
-              setFlashIds((prev) => {
-                const n = new Set(prev);
-                ids.forEach((id) => n.delete(id));
-                return n;
-              });
-            }, 200);
-          }
-
-          return merged;
-        });
-      }
-    };
-
-    window.addEventListener('task:updated' as any, handleUpdate);
-    return () => window.removeEventListener('task:updated' as any, handleUpdate);
-  }, []);
-
-  const visible = allAlerts.slice(0, MAX_VISIBLE);
-  const hasMore = allAlerts.length > MAX_VISIBLE;
+  const urgentAlerts = useMemo(
+    () =>
+      initialAlerts
+        .filter((item) => item.dependency_gap_hours >= HARD_RISK_GAP_HOURS)
+        .sort((a, b) => b.dependency_gap_hours - a.dependency_gap_hours),
+    [initialAlerts]
+  );
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-surface">
-      <div className="border-b border-border px-6 py-4">
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-foreground-muted">Dependency Alerts</h2>
-      </div>
+    <section className="rounded-[16px] border border-border bg-surface shadow-[var(--panel-shadow)]">
+      <header className="border-b border-border px-5 py-4">
+        <h2 className="text-xl font-semibold text-foreground">Urgent Escalations</h2>
+        <p className="mt-1 text-sm text-foreground-muted">
+          Hard-risk dependency chains requiring founder intervention.
+        </p>
+      </header>
 
-      {visible.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center py-12">
-          <p className="px-6 text-center text-sm text-foreground-muted">
-            No dependency alerts. All task chains are flowing.
+      {urgentAlerts.length === 0 ? (
+        <div className="px-5 py-10 text-center">
+          <p className="text-sm font-medium text-foreground">No urgent escalations.</p>
+          <p className="mt-1 text-sm text-foreground-muted">
+            High-risk blockers will appear here when escalation reaches stage 3.
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-border" aria-live="assertive">
-          {visible.map((alert) => {
-            const severity = alertSeverity(alert.dependency_gap_hours);
-            const Icon = severity === 'hard' ? AlertOctagon : AlertTriangle;
-            const isNew = flashIds.has(alert.id);
+        <div aria-live="polite" className="divide-y divide-border">
+          <div className="mx-5 mt-4 rounded-[10px] border border-risk-hard-border bg-risk-hard-bg/20 px-3 py-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-risk-hard">
+              Stage 3 Escalation Active
+            </p>
+          </div>
 
-            return (
-              <div
-                key={alert.id}
-                className={cn(
-                  'flex items-start gap-3 px-4 py-3 transition-colors duration-200',
-                  isNew && 'bg-risk-normal-bg'
-                )}
-              >
-                <Icon
-                  className={cn(
-                    'mt-0.5 h-4 w-4 shrink-0',
-                    severity === 'hard' ? 'text-risk-hard' : 'text-risk-soft'
-                  )}
-                  aria-hidden="true"
-                />
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {alert.campaign.name}
-                  </p>
-                  <p className="truncate text-sm text-foreground-muted">
-                    &ldquo;{alert.title}&rdquo;
-                  </p>
-                  <p className="mt-0.5 text-xs text-foreground-subtle">
-                    Gap {alert.dependency_gap_hours}h
-                  </p>
-                </div>
-
-                <Link
-                  href={`/campaigns/${alert.campaign.id}`}
-                  className="shrink-0 text-xs text-foreground-muted transition-colors hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded"
-                  aria-label={`View campaign ${alert.campaign.name}`}
-                >
-                  View →
-                </Link>
+          {urgentAlerts.map((alert) => (
+            <div key={alert.id} className="flex items-start gap-3 px-5 py-4">
+              <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-risk-hard" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">{alert.campaign.name}</p>
+                <p className="mt-0.5 text-sm text-foreground-muted">&ldquo;{alert.title}&rdquo;</p>
+                <p className="mt-1 text-xs text-risk-hard">Dependency gap: {alert.dependency_gap_hours}h</p>
               </div>
-            );
-          })}
-
-          {hasMore && (
-            <div className="border-t border-border px-4 py-3">
               <Link
-                href="/escalations"
-                className="text-sm text-foreground-muted transition-colors hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded"
+                href={`/campaigns/${alert.campaign.id}/tasks/${alert.id}`}
+                className="shrink-0 text-xs font-semibold text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded"
               >
-                See all escalations →
+                Resolve
               </Link>
             </div>
-          )}
+          ))}
+
+          <div className="px-5 py-3">
+            <Link
+              href="/escalations"
+              className="text-sm font-semibold text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded"
+            >
+              Open Escalation Center
+            </Link>
+          </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

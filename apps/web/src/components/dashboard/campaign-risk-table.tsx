@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useRealtime } from '@/context/realtime-context';
 import { RiskBadge } from '@/components/ui/risk-badge';
 import {
   Table,
@@ -22,7 +21,7 @@ interface Campaign {
   risk_status: RiskStatus;
   client: { id: string; name: string };
   launch_date: string;
-  task_counts: { total: number; overdue: number; blocked: number };
+  task_counts: { total: number; pending: number; overdue: number; blocked: number };
 }
 
 interface Props {
@@ -77,24 +76,20 @@ function isLaunchPassed(dateStr: string): boolean {
   return new Date(dateStr) < today;
 }
 
-/** Inline style for the subtle row background tint — uses CSS custom properties */
-function rowTintStyle(
-  status: RiskStatus,
-  isFlashing: boolean
-): React.CSSProperties {
+function rowTintClass(status: RiskStatus, isFlashing: boolean): string {
   if (isFlashing) {
-    // Brighter pulse during the 200ms flash window
-    if (status === 'high_risk')
-      return { backgroundColor: 'hsl(var(--risk-hard-bg) / 0.4)', transition: 'background-color 200ms ease-out' };
-    if (status === 'at_risk')
-      return { backgroundColor: 'hsl(var(--risk-soft-bg) / 0.4)', transition: 'background-color 200ms ease-out' };
-    return { backgroundColor: 'hsl(var(--risk-normal-bg) / 0.3)', transition: 'background-color 200ms ease-out' };
+    return 'bg-surface-overlay';
   }
-  if (status === 'high_risk')
-    return { backgroundColor: 'hsl(var(--risk-hard-bg) / 0.05)', transition: 'background-color 200ms ease-out' };
-  if (status === 'at_risk')
-    return { backgroundColor: 'hsl(var(--risk-soft-bg) / 0.05)', transition: 'background-color 200ms ease-out' };
-  return { transition: 'background-color 200ms ease-out' };
+
+  if (status === 'high_risk') {
+    return 'bg-risk-hard-bg/25';
+  }
+
+  if (status === 'at_risk') {
+    return 'bg-risk-soft-bg/20';
+  }
+
+  return 'bg-transparent';
 }
 
 export function CampaignRiskTable({ initialData }: Props) {
@@ -102,7 +97,6 @@ export function CampaignRiskTable({ initialData }: Props) {
     sortCampaigns(initialData)
   );
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
-  const { isConnected } = useRealtime();
 
   useEffect(() => {
     const handleUpdate = (e: any) => {
@@ -139,30 +133,23 @@ export function CampaignRiskTable({ initialData }: Props) {
   }, []);
 
   const sortedCampaigns = useMemo(() => {
-    return [...campaigns].sort((a, b) => {
-      const riskOrder = { high_risk: 0, at_risk: 1, normal: 2 };
-      const valA = riskOrder[a.risk_status as keyof typeof riskOrder] ?? 3;
-      const valB = riskOrder[b.risk_status as keyof typeof riskOrder] ?? 3;
-      if (valA !== valB) return valA - valB;
-      const overdueA = a.task_counts?.overdue ?? 0;
-      const overdueB = b.task_counts?.overdue ?? 0;
-      return overdueB - overdueA;
-    });
+    return sortCampaigns(campaigns);
   }, [campaigns]);
 
   if (campaigns.length === 0) {
     return (
-      <div className="flex flex-col rounded-lg border border-border bg-surface">
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-foreground-muted">Campaign Risk</h2>
+      <div className="flex flex-col rounded-[16px] border border-border bg-surface shadow-[var(--panel-shadow)]">
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="text-xl font-semibold text-foreground">Campaign Risk</h2>
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
-          <p className="text-sm text-foreground-muted">
-            No active campaigns. Create your first campaign to start tracking execution risk.
+        <div className="flex flex-1 flex-col items-center justify-center py-14 text-center">
+          <p className="text-base font-medium text-foreground">No active campaigns.</p>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Create a campaign to begin monitoring execution risk.
           </p>
           <Link
             href="/campaigns/new"
-            className="mt-3 text-sm font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded"
+            className="mt-4 text-sm font-semibold text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded"
           >
             Create Campaign
           </Link>
@@ -172,20 +159,23 @@ export function CampaignRiskTable({ initialData }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface">
-      <div className="border-b border-border px-6 py-4">
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-foreground-muted">Campaign Risk</h2>
+    <div className="rounded-[16px] border border-border bg-surface shadow-[var(--panel-shadow)]">
+      <div className="border-b border-border px-5 py-4">
+        <h2 className="text-xl font-semibold text-foreground">Campaign Risk</h2>
+        <p className="mt-1 text-sm text-foreground-muted">
+          Ranked by severity and launch proximity.
+        </p>
       </div>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[10px] font-bold uppercase tracking-widest">Risk</TableHead>
-            <TableHead className="text-[10px] font-bold uppercase tracking-widest">Campaign</TableHead>
-            <TableHead className="text-[10px] font-bold uppercase tracking-widest">Client</TableHead>
-            <TableHead className="text-[10px] font-bold uppercase tracking-widest">Launch</TableHead>
-            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Tasks</TableHead>
-            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right px-4">Overdue</TableHead>
-            <TableHead />
+            <TableHead className="text-xs font-medium">Campaign</TableHead>
+            <TableHead className="text-xs font-medium">Client</TableHead>
+            <TableHead className="text-xs font-medium">Risk</TableHead>
+            <TableHead className="text-xs font-medium">Launch</TableHead>
+            <TableHead className="text-xs font-medium text-right">Pending</TableHead>
+            <TableHead className="text-xs font-medium text-right">Blocked</TableHead>
+            <TableHead className="text-xs font-medium text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody aria-live="polite">
@@ -196,15 +186,8 @@ export function CampaignRiskTable({ initialData }: Props) {
             return (
               <TableRow
                 key={campaign.id}
-                style={rowTintStyle(campaign.risk_status, isFlashing)}
+                className={cn('transition-colors duration-150', rowTintClass(campaign.risk_status, isFlashing))}
               >
-                <TableCell className="py-3">
-                  <RiskBadge
-                    variant={riskToVariant(campaign.risk_status)}
-                    size="sm"
-                  />
-                </TableCell>
-
                 <TableCell className="py-3">
                   <Link
                     href={`/campaigns/${campaign.id}`}
@@ -221,42 +204,55 @@ export function CampaignRiskTable({ initialData }: Props) {
                 </TableCell>
 
                 <TableCell className="py-3">
-                  <span
-                    className={cn(
-                      'text-sm',
-                      passed ? 'text-risk-hard' : 'text-foreground-muted'
-                    )}
-                    title={formatAbsoluteDate(campaign.launch_date)}
-                  >
-                    {formatLaunchDate(campaign.launch_date)}
-                  </span>
-                </TableCell>
-
-                <TableCell className="py-3 text-right">
-                  <span className="font-mono text-sm text-foreground">
-                    {campaign.task_counts.total}
-                  </span>
-                </TableCell>
-
-                <TableCell className="py-3 text-right">
-                  <span
-                    className={cn(
-                      'font-mono text-sm',
-                      campaign.task_counts.overdue > 0
-                        ? 'text-risk-hard'
-                        : 'text-foreground-muted'
-                    )}
-                  >
-                    {campaign.task_counts.overdue}
-                  </span>
+                  <RiskBadge variant={riskToVariant(campaign.risk_status)} size="sm" />
                 </TableCell>
 
                 <TableCell className="py-3">
+                  <div className="text-sm">
+                    <p
+                      className={cn(
+                        'font-medium',
+                        passed ? 'text-risk-hard' : 'text-foreground'
+                      )}
+                    >
+                      {formatAbsoluteDate(campaign.launch_date)}
+                    </p>
+                    <p className={cn('text-xs', passed ? 'text-risk-hard' : 'text-foreground-muted')}>
+                      {formatLaunchDate(campaign.launch_date)}
+                    </p>
+                  </div>
+                </TableCell>
+
+                <TableCell className="py-3 text-right">
+                  <span
+                    className={cn(
+                      'text-sm font-medium',
+                      campaign.task_counts.pending > 0
+                        ? 'text-foreground'
+                        : 'text-foreground-muted'
+                    )}
+                  >
+                    {campaign.task_counts.pending}
+                  </span>
+                </TableCell>
+
+                <TableCell className="py-3 text-right">
+                  <span
+                    className={cn(
+                      'text-sm font-medium',
+                      campaign.task_counts.blocked > 0 ? 'text-risk-blocked' : 'text-foreground-muted'
+                    )}
+                  >
+                    {campaign.task_counts.blocked}
+                  </span>
+                </TableCell>
+
+                <TableCell className="py-3 text-right">
                   <Link
                     href={`/campaigns/${campaign.id}`}
-                    className="text-xs font-semibold text-foreground-muted transition-colors hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded underline-offset-4"
+                    className="text-xs font-semibold text-primary transition-colors hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded underline-offset-4"
                   >
-                    View Campaign →
+                    View
                   </Link>
                 </TableCell>
               </TableRow>

@@ -11,10 +11,10 @@ interface MetricCardProps {
 }
 
 const variantStyles = {
-  primary: 'border-t-primary',
-  soft: 'border-t-risk-soft',
-  hard: 'border-t-risk-hard',
-  normal: 'border-t-risk-normal',
+  primary: 'border-primary',
+  soft: 'border-risk-soft',
+  hard: 'border-risk-hard',
+  normal: 'border-risk-normal',
 };
 
 export function MetricCard({
@@ -27,7 +27,7 @@ export function MetricCard({
 }: MetricCardProps) {
   if (loading) {
     return (
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="rounded-[16px] border border-border bg-surface p-5 shadow-[var(--panel-shadow)]">
         <div className="skeleton mb-2 h-4 w-20 rounded" />
         <div className="skeleton mb-1 h-8 w-16 rounded" />
         <div className="skeleton h-3 w-24 rounded" />
@@ -40,16 +40,16 @@ export function MetricCard({
       role="region"
       aria-label={`${label} count`}
       className={cn(
-        'rounded-lg border border-border bg-surface p-6 transition-colors',
-        `border-t-4 ${variantStyles[variant]}`
+        'rounded-[16px] border bg-surface p-5 shadow-[var(--panel-shadow)] transition-colors',
+        variantStyles[variant]
       )}
     >
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-foreground-muted">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-foreground-muted">
         {label}
       </p>
       <p
         className={cn(
-          'mb-1 font-mono text-3xl font-bold text-foreground transition-all duration-100 ease-out',
+          'mb-1 text-[28px] font-semibold leading-tight text-foreground transition-all duration-100 ease-out',
           valueClassName
         )}
       >

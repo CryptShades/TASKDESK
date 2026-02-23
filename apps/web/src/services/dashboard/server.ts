@@ -20,6 +20,7 @@ export interface FounderDashboardData {
     launch_date: string;
     task_counts: {
       total: number;
+      pending: number;
       overdue: number;
       blocked: number;
     };
@@ -155,9 +156,12 @@ async function getCampaignsWithTaskCounts(orgId: string) {
   // Calculate task counts per campaign
   const taskCountsByCampaign = tasks.reduce((acc, task) => {
     if (!acc[task.campaign_id]) {
-      acc[task.campaign_id] = { total: 0, overdue: 0, blocked: 0 };
+      acc[task.campaign_id] = { total: 0, pending: 0, overdue: 0, blocked: 0 };
     }
     acc[task.campaign_id].total++;
+    if (task.status !== 'completed') {
+      acc[task.campaign_id].pending++;
+    }
     if (task.status === 'blocked') {
       acc[task.campaign_id].blocked++;
     }
@@ -165,11 +169,11 @@ async function getCampaignsWithTaskCounts(orgId: string) {
       acc[task.campaign_id].overdue++;
     }
     return acc;
-  }, {} as Record<string, { total: number; overdue: number; blocked: number }>);
+  }, {} as Record<string, { total: number; pending: number; overdue: number; blocked: number }>);
 
   return (campaigns as any[]).map(campaign => ({
     ...campaign,
-    task_counts: taskCountsByCampaign[campaign.id] || { total: 0, overdue: 0, blocked: 0 },
+    task_counts: taskCountsByCampaign[campaign.id] || { total: 0, pending: 0, overdue: 0, blocked: 0 },
   }));
 }
 

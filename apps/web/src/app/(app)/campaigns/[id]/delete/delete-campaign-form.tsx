@@ -47,6 +47,7 @@ export function DeleteCampaignForm({ campaignId }: DeleteCampaignFormProps) {
       <Button
         type="button"
         variant="danger"
+        className="bg-risk-hard text-white hover:bg-risk-hard/90"
         loading={loading}
         disabled={loading}
         onClick={handleDelete}

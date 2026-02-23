@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
-  Dimensions,
 } from 'react-native';
 import { theme } from '../theme';
 import { Bell, AlertTriangle, AlertOctagon, Info, X } from 'lucide-react-native';
@@ -16,19 +15,22 @@ interface NotificationBannerProps {
   onClose: () => void;
 }
 
-const { width } = Dimensions.get('window');
-
 export function NotificationBanner({ notification, onClose }: NotificationBannerProps) {
   const [translateY] = useState(new Animated.Value(-100));
+  const [opacity] = useState(new Animated.Value(0));
   const router = useRouter();
 
   useEffect(() => {
-    // Slide in
-    Animated.spring(translateY, {
-      toValue: 20,
+    Animated.timing(translateY, {
+      toValue: 12,
+      duration: 180,
       useNativeDriver: true,
-      tension: 40,
-      friction: 8,
+    }).start();
+
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: true,
     }).start();
 
     // Auto-dismiss after 4s
@@ -40,11 +42,18 @@ export function NotificationBanner({ notification, onClose }: NotificationBanner
   }, []);
 
   const handleClose = () => {
-    Animated.timing(translateY, {
-      toValue: -150,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => onClose());
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -40,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start(() => onClose());
   };
 
   const handlePress = () => {
@@ -76,7 +85,7 @@ export function NotificationBanner({ notification, onClose }: NotificationBanner
     <Animated.View 
       style={[
         styles.container, 
-        { transform: [{ translateY }], borderLeftColor: getBorderColor() }
+        { transform: [{ translateY }], opacity, borderLeftColor: getBorderColor() }
       ]}
     >
       <TouchableOpacity 
@@ -128,12 +137,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    ...theme.typography.small,
-    fontWeight: '700',
+    ...theme.typography.label,
+    fontWeight: '600',
     color: theme.colors.foreground,
   },
   message: {
-    ...theme.typography.small,
+    ...theme.typography.label,
     color: theme.colors.foregroundMuted,
     fontSize: 12,
   },

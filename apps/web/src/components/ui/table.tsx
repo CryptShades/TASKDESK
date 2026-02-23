@@ -36,7 +36,7 @@ export function TableRow({ className, ...props }: TableRowProps) {
   return (
     <tr
       className={cn(
-        'border-b border-border transition-colors hover:bg-surface-raised data-[state=selected]:bg-surface-raised',
+        'border-b border-border transition-colors hover:bg-surface-raised/70 data-[state=selected]:bg-surface-raised',
         className
       )}
       {...props}
@@ -48,7 +48,7 @@ export function TableHead({ className, ...props }: TableHeadProps) {
   return (
     <th
       className={cn(
-        'h-12 px-4 text-left align-middle font-medium uppercase tracking-wide text-foreground-muted [&:has([role=checkbox])]:pr-0',
+        'h-12 px-4 text-left align-middle text-xs font-medium text-foreground-muted [&:has([role=checkbox])]:pr-0',
         className
       )}
       {...props}

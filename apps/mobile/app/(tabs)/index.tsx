@@ -7,11 +7,12 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { theme } from '../../src/theme';
 import { useUserStore } from '../../src/store';
 import { api } from '../../src/lib/api';
 import { CampaignCard } from '../../src/components/CampaignCard';
-import { CheckCircle2 } from 'lucide-react-native';
+import { AlertOctagon, CheckCircle2 } from 'lucide-react-native';
 import { RiskBadge } from '../../src/components/RiskBadge';
 import { LoadingScreen } from '../../src/components/LoadingScreen';
 import { ErrorState } from '../../src/components/ErrorState';
@@ -19,6 +20,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 
 export default function DashboardScreen() {
   const { user } = useUserStore();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,13 +51,6 @@ export default function DashboardScreen() {
     fetchData();
   };
 
-  const getTimeGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'morning';
-    if (hour < 17) return 'afternoon';
-    return 'evening';
-  };
-
   const formatDate = () => {
     const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
     return new Date().toLocaleDateString('en-US', options);
@@ -83,14 +78,12 @@ export default function DashboardScreen() {
       }
     >
       <View style={styles.header}>
-        <Text style={styles.greeting}>
-          Good {getTimeGreeting()}, {user?.name?.split(' ')[0] || 'there'}
-        </Text>
-        <Text style={styles.date}>{formatDate()}</Text>
+        <Text style={styles.greeting}>Risk Command Center</Text>
+        <Text style={styles.date}>Updated {formatDate()}</Text>
       </View>
 
       {isFounderOrManager ? (
-        <FounderDashboard data={data} getRiskVariant={getRiskVariant} />
+        <FounderDashboard data={data} getRiskVariant={getRiskVariant} router={router} />
       ) : (
         <MemberDashboard data={data} getRiskVariant={getRiskVariant} />
       )}
@@ -98,46 +91,44 @@ export default function DashboardScreen() {
   );
 }
 
-function FounderDashboard({ data, getRiskVariant }: { data: any, getRiskVariant: (s: string) => any }) {
+function FounderDashboard({
+  data,
+  getRiskVariant,
+  router,
+}: {
+  data: any;
+  getRiskVariant: (s: string) => any;
+  router: ReturnType<typeof useRouter>;
+}) {
   if (!data) return <EmptyState message="No data available." />;
 
-  const { metrics, campaigns } = data;
-  const highRiskCampaigns = campaigns?.filter((c: any) => c.risk_status === 'high_risk') || [];
+  const { metrics, campaigns = [], dependency_alerts = [] } = data;
+  const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
+    const priority: Record<string, number> = { high_risk: 0, at_risk: 1, normal: 2 };
+    const riskDiff = (priority[a.risk_status] ?? 3) - (priority[b.risk_status] ?? 3);
+    if (riskDiff !== 0) return riskDiff;
+    return (b.task_counts?.blocked ?? 0) - (a.task_counts?.blocked ?? 0);
+  });
+
+  const urgentAlerts = dependency_alerts
+    .filter((alert: any) => (alert.dependency_gap_hours ?? 0) >= 24)
+    .slice(0, 4);
 
   return (
     <>
       <View style={styles.grid}>
-        <MetricCard
-          label="HIGH RISK"
-          value={metrics?.high_risk_count || 0}
-          color={theme.colors.riskHard}
-          isUrgent={metrics?.high_risk_count > 0}
-        />
-        <MetricCard
-          label="AT RISK"
-          value={metrics?.at_risk_count || 0}
-          color={theme.colors.riskSoft}
-          isUrgent={metrics?.at_risk_count > 0}
-        />
-        <MetricCard
-          label="ON TRACK"
-          value={metrics?.active_count || 0}
-          color={theme.colors.riskNormal}
-        />
-        <MetricCard
-          label="STALLED"
-          value={metrics?.stalled_tasks_count || 0}
-          color={theme.colors.riskSoft}
-        />
+        <MetricCard label="High Risk" value={metrics?.high_risk_count || 0} color={theme.colors.riskHard} />
+        <MetricCard label="At Risk" value={metrics?.at_risk_count || 0} color={theme.colors.riskSoft} />
+        <MetricCard label="Normal" value={metrics?.active_count || 0} color={theme.colors.riskNormal} />
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionLabel}>HIGH RISK CAMPAIGNS</Text>
+        <Text style={styles.sectionLabel}>CAMPAIGN RISK</Text>
       </View>
 
-      {highRiskCampaigns.length > 0 ? (
+      {sortedCampaigns.length > 0 ? (
         <>
-          {highRiskCampaigns.slice(0, 3).map((campaign: any) => (
+          {sortedCampaigns.slice(0, 5).map((campaign: any) => (
             <CampaignCard
               key={campaign.id}
               id={campaign.id}
@@ -149,30 +140,55 @@ function FounderDashboard({ data, getRiskVariant }: { data: any, getRiskVariant:
               blockedCount={campaign.task_counts?.blocked || 0}
             />
           ))}
-          {highRiskCampaigns.length > 3 && (
-            <TouchableOpacity style={styles.viewMoreButton}>
-              <Text style={styles.viewMoreText}>View {highRiskCampaigns.length - 3} more</Text>
+          {sortedCampaigns.length > 5 && (
+            <TouchableOpacity style={styles.viewMoreButton} onPress={() => router.push('/(tabs)/campaigns')}>
+              <Text style={styles.viewMoreText}>View all campaigns</Text>
             </TouchableOpacity>
           )}
         </>
       ) : (
         <View style={styles.emptyCard}>
           <CheckCircle2 color={theme.colors.riskNormal} size={24} />
-          <Text style={styles.emptyText}>All campaigns on track</Text>
+          <Text style={styles.emptyText}>No active campaigns.</Text>
+          <Text style={styles.emptyTextSub}>Create a campaign to begin monitoring execution risk.</Text>
         </View>
       )}
 
-      <TouchableOpacity style={styles.viewAllFooter}>
-        <Text style={styles.viewAllText}>[View All Campaigns →]</Text>
-      </TouchableOpacity>
+      <View style={[styles.sectionHeader, { marginTop: theme.spacing.lg }]}>
+        <Text style={styles.sectionLabel}>URGENT TASKS</Text>
+      </View>
+
+      {urgentAlerts.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <CheckCircle2 color={theme.colors.riskNormal} size={24} />
+          <Text style={styles.emptyText}>No urgent escalations.</Text>
+        </View>
+      ) : (
+        urgentAlerts.map((alert: any) => (
+          <TouchableOpacity
+            key={alert.id}
+            style={styles.urgentRow}
+            onPress={() => router.push(`/(tabs)/campaigns/${alert.campaign.id}`)}
+          >
+            <AlertOctagon color={theme.colors.riskHard} size={16} />
+            <View style={styles.urgentContent}>
+              <Text style={styles.urgentCampaign}>{alert.campaign.name}</Text>
+              <Text style={styles.urgentTask} numberOfLines={1}>
+                {alert.title}
+              </Text>
+            </View>
+            <Text style={styles.urgentGap}>{alert.dependency_gap_hours}h</Text>
+          </TouchableOpacity>
+        ))
+      )}
     </>
   );
 }
 
-function MetricCard({ label, value, color, isUrgent }: any) {
+function MetricCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <View style={[styles.metricCard, { borderTopColor: color }]}>
-      <Text style={[styles.metricValue, isUrgent && { color }]}>{value}</Text>
+    <View style={[styles.metricCard, { borderColor: color }]}>
+      <Text style={[styles.metricValue, value > 0 ? { color } : null]}>{value}</Text>
       <Text style={styles.metricLabel}>{label}</Text>
     </View>
   );
@@ -209,12 +225,12 @@ function MemberDashboard({ data, getRiskVariant }: { data: any[], getRiskVariant
               <RiskBadge variant={getRiskVariant(task.risk_flag || 'normal')} />
             </View>
             <Text style={styles.campaignName}>{task.campaign?.name}</Text>
-            <div style={styles.taskCardBottom as any}>
+            <View style={styles.taskCardBottom}>
               <Text style={styles.dueInfo}>Due {new Date(task.due_date).toLocaleDateString()}</Text>
               <TouchableOpacity style={styles.updateButton}>
                 <Text style={styles.updateButtonText}>Update →</Text>
               </TouchableOpacity>
-            </div>
+            </View>
           </View>
         ))
       ) : (
@@ -256,62 +272,61 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   header: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   greeting: {
-    ...theme.typography.h2,
+    ...theme.typography.h1,
     color: theme.colors.foreground,
-    fontSize: 24,
   },
   date: {
-    ...theme.typography.caption,
+    ...theme.typography.label,
     color: theme.colors.foregroundMuted,
     marginTop: 4,
   },
   grid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: theme.spacing.md,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   metricCard: {
-    width: '47%',
+    width: '31%',
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.md,
-    borderRadius: theme.roundness.md,
-    borderTopWidth: 2,
+    borderRadius: theme.roundness.lg,
+    borderWidth: 1,
     alignItems: 'flex-start',
     gap: 4,
   },
   metricValue: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '600',
     color: theme.colors.foreground,
     ...theme.typography.numbers,
   },
   metricLabel: {
-    ...theme.typography.small,
-    fontSize: 10,
+    ...theme.typography.label,
     color: theme.colors.foregroundMuted,
-    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   sectionHeader: {
     marginBottom: theme.spacing.md,
   },
   sectionLabel: {
-    ...theme.typography.small,
-    fontSize: 10,
-    fontWeight: '700',
+    ...theme.typography.label,
     color: theme.colors.foregroundMuted,
-    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   viewMoreButton: {
-    padding: theme.spacing.md,
-    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+    alignItems: 'flex-start',
   },
   viewMoreText: {
-    ...theme.typography.small,
+    ...theme.typography.label,
     color: theme.colors.primary,
+    fontWeight: '600',
   },
   viewAllFooter: {
     marginTop: theme.spacing.lg,
@@ -392,20 +407,47 @@ const styles = StyleSheet.create({
   emptyCard: {
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.xl,
-    borderRadius: theme.roundness.md,
+    borderRadius: theme.roundness.lg,
     alignItems: 'center',
     gap: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderStyle: 'dashed',
   },
   emptyText: {
     ...theme.typography.body,
-    color: theme.colors.foregroundMuted,
+    color: theme.colors.foreground,
   },
   emptyTextSub: {
-    ...theme.typography.small,
+    ...theme.typography.label,
     color: theme.colors.foregroundMuted,
     textAlign: 'center',
+  },
+  urgentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.roundness.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  urgentContent: {
+    flex: 1,
+  },
+  urgentCampaign: {
+    ...theme.typography.h3,
+    color: theme.colors.foreground,
+  },
+  urgentTask: {
+    ...theme.typography.body,
+    color: theme.colors.foregroundMuted,
+    marginTop: 2,
+  },
+  urgentGap: {
+    ...theme.typography.label,
+    color: theme.colors.riskHard,
+    fontWeight: '600',
   },
 });
