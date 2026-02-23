@@ -117,7 +117,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/campaigns') ||
     pathname.startsWith('/clients') ||
     pathname.startsWith('/escalations') ||
+    pathname.startsWith('/notifications') ||
     pathname.startsWith('/settings') ||
+    pathname.startsWith('/team') ||
     pathname.startsWith('/tasks');
 
   if (session) {

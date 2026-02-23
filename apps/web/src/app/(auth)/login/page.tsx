@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,14 +25,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState<AlertInfo | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [forgotVisible, setForgotVisible] = useState(false);
-
-  useEffect(() => {
-    if (forgotVisible) {
-      const t = setTimeout(() => setForgotVisible(false), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [forgotVisible]);
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {};
@@ -169,24 +162,12 @@ export default function LoginPage() {
       </form>
 
       <div className="text-center">
-        <div className="relative inline-block">
-          <button
-            type="button"
-            onClick={() => setForgotVisible(true)}
-            className="text-sm text-foreground-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded"
-          >
-            Forgot password?
-          </button>
-          {forgotVisible && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-surface-raised px-3 py-1.5 text-xs text-foreground-muted shadow-sm"
-            >
-              Password reset coming soon
-            </div>
-          )}
-        </div>
+        <Link
+          href="/auth/forgot-password"
+          className="text-sm text-foreground-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded"
+        >
+          Forgot password?
+        </Link>
       </div>
     </div>
   );

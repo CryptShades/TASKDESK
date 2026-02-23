@@ -57,7 +57,7 @@ export function NotificationInbox({ initialNotifications }: Props) {
   async function markRead(id: string) {
     try {
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-      await fetch(`/api/notifications/${id}`, { method: 'PATCH', body: JSON.stringify({ read: true }) });
+      await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }

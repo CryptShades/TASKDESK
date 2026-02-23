@@ -19,7 +19,7 @@ export function OrganizationForm() {
     async function fetchOrg() {
       if (!currentUser?.org_id) return;
       try {
-        const res = await fetch(`/api/org/settings`); // We can reuse this or a GET
+        const res = await fetch('/api/org');
         const data = await res.json();
         if (data.data) {
           setName(data.data.name);
