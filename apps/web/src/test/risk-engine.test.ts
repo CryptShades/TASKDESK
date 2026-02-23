@@ -7,11 +7,17 @@ describe('evaluateTaskRisk', () => {
     const assignedAt = new Date(now.getTime() - 25 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'not_started' as const,
-      assigned_at: assignedAt.toISOString(),
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
+      status: 'not_started' as const,
       risk_flag: null,
+      assigned_at: assignedAt.toISOString(),
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -24,11 +30,17 @@ describe('evaluateTaskRisk', () => {
     const assignedAt = new Date(now.getTime() - 20 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'not_started' as const,
-      assigned_at: assignedAt.toISOString(),
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
+      status: 'not_started' as const,
       risk_flag: null,
+      assigned_at: assignedAt.toISOString(),
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -41,16 +53,26 @@ describe('evaluateTaskRisk', () => {
     const completedAt = new Date(now.getTime() - 13 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'not_started' as const,
-      assigned_at: null,
-      dependency_id: 'dep1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: 'dep1',
+      status: 'not_started' as const,
       risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
         task_id: 'dep1',
+        org_id: 'org1',
+        actor_id: 'user1',
         event_type: 'status_changed',
+        old_value: null,
         new_value: 'completed',
         created_at: completedAt.toISOString(),
       },
@@ -65,16 +87,26 @@ describe('evaluateTaskRisk', () => {
     const completedAt = new Date(now.getTime() - 8 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'not_started' as const,
-      assigned_at: null,
-      dependency_id: 'dep1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: 'dep1',
+      status: 'not_started' as const,
       risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
         task_id: 'dep1',
+        org_id: 'org1',
+        actor_id: 'user1',
         event_type: 'status_changed',
+        old_value: null,
         new_value: 'completed',
         created_at: completedAt.toISOString(),
       },
@@ -89,11 +121,17 @@ describe('evaluateTaskRisk', () => {
     const dueDate = new Date(now.getTime() - 2 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'in_progress' as const,
-      assigned_at: null,
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
+      status: 'in_progress' as const,
       risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -106,11 +144,17 @@ describe('evaluateTaskRisk', () => {
     const dueDate = new Date(now.getTime() + 2 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'in_progress' as const,
-      assigned_at: null,
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
+      status: 'in_progress' as const,
       risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -123,16 +167,26 @@ describe('evaluateTaskRisk', () => {
     const blockedAt = new Date(now.getTime() - 25 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'blocked' as const,
-      assigned_at: null,
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
+      status: 'blocked' as const,
       risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
         task_id: '1',
+        org_id: 'org1',
+        actor_id: 'user1',
         event_type: 'status_changed',
+        old_value: null,
         new_value: 'blocked',
         created_at: blockedAt.toISOString(),
       },
@@ -147,16 +201,26 @@ describe('evaluateTaskRisk', () => {
     const blockedAt = new Date(now.getTime() - 20 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      status: 'blocked' as const,
-      assigned_at: null,
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
+      status: 'blocked' as const,
       risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
         task_id: '1',
+        org_id: 'org1',
+        actor_id: 'user1',
         event_type: 'status_changed',
+        old_value: null,
         new_value: 'blocked',
         created_at: blockedAt.toISOString(),
       },
@@ -170,11 +234,17 @@ describe('evaluateTaskRisk', () => {
     const now = new Date();
     const task = {
       id: '1',
-      status: 'completed' as const,
-      assigned_at: null,
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
+      status: 'completed' as const,
       risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -186,11 +256,17 @@ describe('evaluateTaskRisk', () => {
     const now = new Date();
     const task = {
       id: '1',
-      status: 'not_started' as const,
-      assigned_at: null,
-      dependency_id: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
+      status: 'not_started' as const,
       risk_flag: 'hard_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -204,7 +280,14 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks: any[] = [];
 
@@ -216,11 +299,44 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks = [
-      { status: 'completed' as const, risk_flag: null },
-      { status: 'completed' as const, risk_flag: null },
+      { 
+        id: 'task1',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 1',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'completed' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+      { 
+        id: 'task2',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 2',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'completed' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
     ];
 
     const result = calculateCampaignRisk(campaign, tasks, now);
@@ -231,11 +347,44 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks = [
-      { status: 'in_progress' as const, risk_flag: 'hard_risk' as const },
-      { status: 'completed' as const, risk_flag: null },
+      { 
+        id: 'task1',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 1',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: 'hard_risk' as const,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+      { 
+        id: 'task2',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 2',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'completed' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
     ];
 
     const result = calculateCampaignRisk(campaign, tasks, now);
@@ -246,12 +395,58 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks = [
-      { status: 'in_progress' as const, risk_flag: 'hard_risk' as const },
-      { status: 'in_progress' as const, risk_flag: 'hard_risk' as const },
-      { status: 'in_progress' as const, risk_flag: 'hard_risk' as const },
+      { 
+        id: 'task1',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 1',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: 'hard_risk' as const,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+      { 
+        id: 'task2',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 2',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: 'hard_risk' as const,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+      { 
+        id: 'task3',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 3',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: 'hard_risk' as const,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
     ];
 
     const result = calculateCampaignRisk(campaign, tasks, now);
@@ -262,11 +457,44 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks = [
-      { status: 'in_progress' as const, risk_flag: 'soft_risk' as const },
-      { status: 'in_progress' as const, risk_flag: 'soft_risk' as const },
+      { 
+        id: 'task1',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 1',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: 'soft_risk' as const,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+      { 
+        id: 'task2',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 2',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: 'soft_risk' as const,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
     ];
 
     const result = calculateCampaignRisk(campaign, tasks, now);
@@ -277,10 +505,30 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks = [
-      { status: 'in_progress' as const, risk_flag: null },
+      { 
+        id: 'task1',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 1',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
     ];
 
     const result = calculateCampaignRisk(campaign, tasks, now);
@@ -291,11 +539,44 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() + 47 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks = [
-      { status: 'in_progress' as const, risk_flag: null },
-      { status: 'in_progress' as const, risk_flag: null },
+      { 
+        id: 'task1',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 1',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+      { 
+        id: 'task2',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 2',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
     ];
 
     const result = calculateCampaignRisk(campaign, tasks, now);
@@ -306,11 +587,44 @@ describe('calculateCampaignRisk', () => {
     const now = new Date();
     const campaign = {
       id: '1',
+      org_id: 'org1',
+      client_id: 'client1',
+      name: 'Test Campaign',
       launch_date: new Date(now.getTime() + 49 * 60 * 60 * 1000).toISOString(),
+      risk_status: 'normal' as const,
+      created_by: 'user1',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const tasks = [
-      { status: 'in_progress' as const, risk_flag: null },
-      { status: 'in_progress' as const, risk_flag: null },
+      { 
+        id: 'task1',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 1',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
+      { 
+        id: 'task2',
+        campaign_id: '1',
+        org_id: 'org1',
+        title: 'Task 2',
+        owner_id: 'user1',
+        due_date: now.toISOString(),
+        dependency_id: null,
+        status: 'in_progress' as const, 
+        risk_flag: null,
+        assigned_at: null,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      },
     ];
 
     const result = calculateCampaignRisk(campaign, tasks, now);

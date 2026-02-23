@@ -8,6 +8,8 @@ export const metadata = {
   title: 'Escalations Center | Taskdesk',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function EscalationsPage() {
   const currentUser = await getCurrentUser();
 

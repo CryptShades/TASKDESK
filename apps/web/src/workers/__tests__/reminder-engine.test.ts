@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runReminderEngine } from '../reminder-engine';
 import { SupabaseClient } from '@supabase/supabase-js';
 
+vi.mock('../../lib/worker-lock', () => ({
+  acquireLock: vi.fn().mockResolvedValue(true),
+  releaseLock: vi.fn(),
+}));
+
 describe('Reminder Engine', () => {
   let mockSupabase: any;
 
@@ -16,6 +21,7 @@ describe('Reminder Engine', () => {
       limit: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
     };
     vi.clearAllMocks();
   });
@@ -29,6 +35,7 @@ describe('Reminder Engine', () => {
         data: [{ id: 'task-1', due_date: dueSoon, status: 'in_progress', owner_id: 'user-1', org_id: 'org-1' }] 
       };
       if (table === 'task_events') return { data: [] }; // No recent reminders
+      if (table === 'worker_locks') return mockSupabase; // Return self for chaining
       return { data: [] };
     });
 
@@ -53,6 +60,7 @@ describe('Reminder Engine', () => {
       if (table === 'task_events') return { 
         data: [{ event_type: 'reminder_sent', created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString() }] 
       };
+      if (table === 'worker_locks') return mockSupabase; // Return self for chaining
       return { data: [] };
     });
 
@@ -71,6 +79,7 @@ describe('Reminder Engine', () => {
       if (table === 'tasks') return { 
         data: [{ id: 'task-1', due_date: overdueDate, status: 'in_progress', owner_id: 'user-1', org_id: 'org-1', risk_flag: null }] 
       };
+      if (table === 'worker_locks') return mockSupabase; // Return self for chaining
       return { data: [] };
     });
 

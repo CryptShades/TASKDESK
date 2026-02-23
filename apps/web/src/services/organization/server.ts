@@ -196,7 +196,14 @@ export async function getPendingInvites(orgId: string) {
   return data;
 }
 
-export async function createInvitation(orgId: string, email: string, role: UserRole, invitedBy: string) {
+export async function createInvitation(
+  orgId: string,
+  email: string,
+  role: UserRole,
+  invitedBy: string,
+  tokenHash?: string,
+  expiresAt?: Date,
+) {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -206,6 +213,8 @@ export async function createInvitation(orgId: string, email: string, role: UserR
       email,
       role,
       invited_by: invitedBy,
+      ...(tokenHash && { token_hash: tokenHash }),
+      ...(expiresAt && { expires_at: expiresAt.toISOString() }),
     })
     .select()
     .single();

@@ -16,6 +16,8 @@
     "@supabase/ssr": "^0.3.0",
     "@taskdesk/types": "workspace:*",
     "@taskdesk/utils": "workspace:*",
+    "@upstash/ratelimit": "^1.2.1",
+    "@upstash/redis": "^1.28.4",
     "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",
     "next": "14.1.0",

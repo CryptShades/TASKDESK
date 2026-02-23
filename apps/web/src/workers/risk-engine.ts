@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { revalidateTag } from 'next/cache';
 import { processEscalations } from './escalation-processor';
 import { Database } from '../../supabase/types';
 import {
@@ -7,6 +8,7 @@ import {
   DEPENDENCY_GAP_SOFT_RISK_HOURS,
   TASK_BLOCKED_HARD_RISK_HOURS,
 } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 import { acquireLock, releaseLock, readCursorState, updateCursorState } from '@/lib/worker-lock';
 
 export interface RiskEngineResult {
@@ -110,7 +112,11 @@ export async function runRiskEngine(supabase: SupabaseClient, options?: RiskEngi
   const lockName = 'risk_engine';
   const acquired = await acquireLock(supabase, lockName, 55);
   if (!acquired) {
-    console.log(JSON.stringify({ event: 'risk_engine_skipped', reason: 'lock_held', startTime }));
+    logger.info('Risk engine skipped — lock held by another instance', {
+      event: 'risk_engine_skipped',
+      reason: 'lock_held',
+      startTime,
+    });
     return { processedOrgs, tasksEvaluated, riskChanges };
   }
 
@@ -121,12 +127,12 @@ export async function runRiskEngine(supabase: SupabaseClient, options?: RiskEngi
     if (options?.orgId) {
       // Event-triggered mode: process only this org, ignore pagination
       targetOrgIds.push(options.orgId);
-      console.log(JSON.stringify({
+      logger.info('Risk engine start', {
         event: 'risk_engine_start',
         startTime,
         mode: 'event_triggered',
-        orgId: options.orgId,
-      }));
+        org_id: options.orgId,
+      });
     } else {
       // Cron mode: fetch orgs in pages using cursor
       const { lastProcessedOrgId, pageSize } = await readCursorState(supabase, lockName);
@@ -162,13 +168,13 @@ export async function runRiskEngine(supabase: SupabaseClient, options?: RiskEngi
         cursorPosition = null;
       }
 
-      console.log(JSON.stringify({
+      logger.info('Risk engine start', {
         event: 'risk_engine_start',
         startTime,
         mode: 'cron',
         batchSize: targetOrgIds.length,
         cursorPosition: lastProcessedOrgId,
-      }));
+      });
     }
 
     // Process orgs in parallel within this page using Promise.allSettled()
@@ -187,19 +193,19 @@ export async function runRiskEngine(supabase: SupabaseClient, options?: RiskEngi
 
           // Run escalation processor after risk scoring
           await processEscalations(supabase, orgId).catch((error) => {
-            console.error(JSON.stringify({
+            logger.error('Risk engine escalation processor failed', {
               event: 'risk_engine_escalation_error',
-              orgId,
-              error,
-            }));
+              org_id: orgId,
+              error: error instanceof Error ? error.message : String(error),
+            });
           });
         } else {
           // Log rejected org process but continue with others
-          console.error(JSON.stringify({
+          logger.error('Risk engine org processing failed', {
             event: 'risk_engine_org_process_failed',
-            orgId,
-            reason: result.reason,
-          }));
+            org_id: orgId,
+            error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+          });
         }
       }
 
@@ -210,21 +216,51 @@ export async function runRiskEngine(supabase: SupabaseClient, options?: RiskEngi
     }
 
   } catch (error) {
-    console.error(JSON.stringify({ event: 'risk_engine_error', error }));
+    logger.error('Risk engine unexpected error', {
+      event: 'risk_engine_error',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   } finally {
     await releaseLock(supabase, lockName);
   }
 
   const durationMs = Date.now() - wallStart;
-  console.log(JSON.stringify({
+  logger.info('Risk engine end', {
     event: 'risk_engine_end',
     durationMs,
     processedOrgs,
     tasksEvaluated,
     riskChanges,
-  }));
+  });
 
   return { processedOrgs, tasksEvaluated, riskChanges };
+}
+
+/**
+ * Walk the dependency chain for a task and return the ID of the first
+ * upstream task that has hard_risk, or null if none exist.
+ * Uses effectiveRiskMap so flags updated earlier in the same run are seen.
+ */
+function findHardRiskUpstream(
+  task: Task,
+  taskById: Map<string, Task>,
+  effectiveRiskMap: Map<string, 'soft_risk' | 'hard_risk' | null>,
+): string | null {
+  const visited = new Set<string>();
+  let currentId = task.dependency_id;
+
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    if (effectiveRiskMap.get(currentId) === 'hard_risk') {
+      return currentId;
+    }
+    const upstream = taskById.get(currentId);
+    if (!upstream) break;
+    currentId = upstream.dependency_id;
+  }
+
+  return null;
 }
 
 async function processOrg(supabase: SupabaseClient, orgId: string) {
@@ -257,10 +293,22 @@ async function processOrg(supabase: SupabaseClient, orgId: string) {
 
   if (!taskEvents) throw new Error('Failed to fetch task events');
 
+  // Build lookup structures used for both individual evaluation and propagation
+  const taskById = new Map<string, Task>(tasks.map(t => [t.id, t]));
+  // Tracks the post-evaluation risk flag for each task (updated in-place below)
+  const effectiveRiskMap = new Map<string, 'soft_risk' | 'hard_risk' | null>(
+    tasks.map(t => [t.id, t.risk_flag]),
+  );
+
   for (const task of tasks) {
     tasksEvaluated++;
-    const relevantEvents = taskEvents.filter(e => e.task_id === task.id || (task.dependency_id && e.task_id === task.dependency_id));
+    const relevantEvents = taskEvents.filter(
+      e => e.task_id === task.id || (task.dependency_id && e.task_id === task.dependency_id),
+    );
     const newRiskFlag = evaluateTaskRisk(task, relevantEvents, now);
+
+    // Keep effective map in sync so propagation sees up-to-date values
+    effectiveRiskMap.set(task.id, newRiskFlag);
 
     // Apply task risk update if changed
     if (newRiskFlag !== task.risk_flag) {
@@ -274,8 +322,48 @@ async function processOrg(supabase: SupabaseClient, orgId: string) {
         new_value: newRiskFlag as string,
       });
       if (eventError) {
-        console.error(JSON.stringify({ event: 'risk_engine_event_insert_error', taskId: task.id, error: eventError }));
+        logger.error('Risk engine task event insert failed', {
+          event: 'risk_engine_event_insert_error',
+          task_id: task.id,
+          org_id: orgId,
+          error: eventError.message,
+        });
       }
+    }
+  }
+
+  // Step 1b — Transitive dependency risk propagation
+  // If any upstream task in a chain has hard_risk, downstream not_started
+  // tasks inherit at least soft_risk so founders see the full blast radius.
+  for (const task of tasks) {
+    if (task.status !== 'not_started') continue;
+
+    const originTaskId = findHardRiskUpstream(task, taskById, effectiveRiskMap);
+    if (!originTaskId) continue;
+
+    const currentRisk = effectiveRiskMap.get(task.id);
+    if (currentRisk === 'hard_risk' || currentRisk === 'soft_risk') continue;
+
+    effectiveRiskMap.set(task.id, 'soft_risk');
+    riskChanges++;
+
+    await supabase.from('tasks').update({ risk_flag: 'soft_risk' }).eq('id', task.id);
+
+    const { error: propEventError } = await supabase.from('task_events').insert({
+      task_id: task.id,
+      org_id: orgId,
+      actor_id: SYSTEM_ACTOR_ID,
+      event_type: 'risk_propagated',
+      new_value: originTaskId,
+    });
+    if (propEventError) {
+      logger.error('Risk engine propagation event insert failed', {
+        event: 'risk_engine_propagation_event_error',
+        task_id: task.id,
+        origin_task_id: originTaskId,
+        org_id: orgId,
+        error: propEventError.message,
+      });
     }
   }
 
@@ -291,10 +379,24 @@ async function processOrg(supabase: SupabaseClient, orgId: string) {
       const newRisk = calculateCampaignRisk(campaign, tasksInCampaign, now);
 
       if (newRisk !== campaign.risk_status) {
-        await supabase
+        // Guard against the campaign being deleted between the fetch and the update
+        const { data: updated } = await supabase
           .from('campaigns')
           .update({ risk_status: newRisk })
-          .eq('id', campaign.id);
+          .eq('id', campaign.id)
+          .select('id');
+
+        if (!updated || updated.length === 0) {
+          logger.warn('Risk engine: campaign not found during scoring — may have been deleted', {
+            event: 'risk_engine_campaign_not_found',
+            campaign_id: campaign.id,
+            org_id: orgId,
+          });
+          continue;
+        }
+
+        // Bust the founder dashboard cache immediately — risk metrics changed.
+        revalidateTag(`dashboard-${orgId}`);
       }
     }
   }

@@ -7,6 +7,11 @@ vi.mock('../escalation-processor', () => ({
   processEscalations: vi.fn(),
 }));
 
+vi.mock('../../lib/worker-lock', () => ({
+  acquireLock: vi.fn().mockResolvedValue(true),
+  releaseLock: vi.fn(),
+}));
+
 describe('Risk Engine', () => {
   let mockSupabase: any;
 
@@ -21,6 +26,8 @@ describe('Risk Engine', () => {
       single: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      lt: vi.fn().mockReturnThis(),
     };
   });
 
@@ -41,6 +48,7 @@ describe('Risk Engine', () => {
         update: vi.fn().mockResolvedValue({ error: null })
       };
       if (table === 'campaigns') return { data: [] };
+      if (table === 'worker_locks') return mockSupabase; // Return self for chaining
       return { data: [] };
     });
 
@@ -66,6 +74,7 @@ describe('Risk Engine', () => {
         update: vi.fn().mockResolvedValue({ error: null })
       };
       if (table === 'campaigns') return { data: [] };
+      if (table === 'worker_locks') return mockSupabase; // Return self for chaining
       return { data: [] };
     });
 
@@ -89,6 +98,7 @@ describe('Risk Engine', () => {
           ]
         }]
       };
+      if (table === 'worker_locks') return mockSupabase; // Return self for chaining
       return { data: [] };
     });
 

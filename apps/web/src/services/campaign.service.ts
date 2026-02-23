@@ -63,7 +63,8 @@ export async function getCampaigns(orgId: string): Promise<CampaignWithStats[]> 
       client:clients(id, name)
     `)
     .eq('org_id', orgId)
-    .order('launch_date', { ascending: true });
+    .order('launch_date', { ascending: true })
+    .limit(100); // A founder with 100+ active campaigns has bigger problems
 
   if (campaignsError) {
     throw new CampaignError(ErrorCode.CAMPAIGNS_FETCH_FAILED, 'Failed to fetch campaigns');
@@ -78,7 +79,8 @@ export async function getCampaigns(orgId: string): Promise<CampaignWithStats[]> 
       status,
       due_date
     `)
-    .in('campaign_id', campaignIds);
+    .in('campaign_id', campaignIds)
+    .limit(200); // 200 tasks per campaign ceiling; orgs at this scale use the full API
 
   if (statsError) {
     throw new CampaignError(ErrorCode.STATS_FETCH_FAILED, 'Failed to fetch task statistics');
@@ -154,9 +156,31 @@ export async function createCampaign(data: CreateCampaignData, orgId: string, ac
 export async function updateCampaign(id: string, data: UpdateCampaignData, orgId: string, actorId: string) {
   const supabase = createClient();
 
-  // Validate launch_date if provided
-  if (data.launch_date && new Date(data.launch_date) <= new Date()) {
-    throw new CampaignError(ErrorCode.INVALID_LAUNCH_DATE, 'Launch date must be in the future');
+  if (data.launch_date) {
+    // New launch_date explicitly provided — must be in the future
+    if (new Date(data.launch_date) <= new Date()) {
+      throw new CampaignError(ErrorCode.INVALID_LAUNCH_DATE, 'Launch date must be in the future');
+    }
+  } else {
+    // No launch_date in payload — validate the existing one is still ≥ 24h away.
+    // This prevents silently updating other fields on a campaign whose window
+    // has already closed or is about to close.
+    const { data: existing } = await supabase
+      .from('campaigns')
+      .select('launch_date')
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .single();
+
+    if (existing) {
+      const hoursToLaunch = (new Date(existing.launch_date).getTime() - Date.now()) / (1000 * 60 * 60);
+      if (hoursToLaunch < 24) {
+        throw new CampaignError(
+          ErrorCode.INVALID_LAUNCH_DATE,
+          'Campaign launch is within 24 hours or has already passed. Update the launch date first.',
+        );
+      }
+    }
   }
 
   const { data: campaign, error } = await supabase
@@ -208,7 +232,8 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats> 
   const { data: campaigns, error: campaignsError } = await supabase
     .from('campaigns')
     .select('risk_status')
-    .eq('org_id', orgId);
+    .eq('org_id', orgId)
+    .limit(100); // A founder with 100+ active campaigns has bigger problems
 
   if (campaignsError) {
     throw new CampaignError(ErrorCode.STATS_FETCH_FAILED, 'Failed to fetch dashboard statistics');

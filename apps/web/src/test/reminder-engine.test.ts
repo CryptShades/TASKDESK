@@ -7,8 +7,17 @@ describe('shouldSendReminder', () => {
     const dueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const task = {
       id: '1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -22,12 +31,26 @@ describe('shouldSendReminder', () => {
     const reminderTime = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2h ago
     const task = {
       id: '1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
+        task_id: '1',
+        org_id: 'org1',
+        actor_id: 'system',
         event_type: 'reminder_sent',
+        old_value: null,
         new_value: '24h',
         created_at: reminderTime.toISOString(),
       },
@@ -44,8 +67,17 @@ describe('shouldSendReminder', () => {
     dueDate.setUTCHours(12, 0, 0, 0); // Same day, later time
     const task = {
       id: '1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -58,8 +90,17 @@ describe('shouldSendReminder', () => {
     const dueDate = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2h ago
     const task = {
       id: '1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -72,8 +113,17 @@ describe('shouldSendReminder', () => {
     const dueDate = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2h ago
     const task = {
       id: '1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
       status: 'completed' as const,
+      risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -86,8 +136,17 @@ describe('shouldSendReminder', () => {
     const dueDate = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const task = {
       id: '1',
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
       due_date: dueDate.toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 

@@ -5,6 +5,10 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock('next/cache', () => ({
+  revalidateTag: vi.fn(),
+}));
+
 import { createClient } from '@/lib/supabase/server';
 
 describe('Task Service - Status Transitions', () => {

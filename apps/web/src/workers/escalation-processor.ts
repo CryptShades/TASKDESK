@@ -7,6 +7,7 @@ import {
   ESCALATION_STAGE_2_COOLDOWN_HOURS,
   ESCALATION_STAGE_3_COOLDOWN_HOURS,
 } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 
 type Task = Database['public']['Tables']['tasks']['Row'];
 type TaskEvent = Database['public']['Tables']['task_events']['Row'];
@@ -44,7 +45,7 @@ export function determineEscalationStage(task: Task, taskEvents: TaskEvent[], no
 }
 
 export async function processEscalations(supabase: SupabaseClient, orgId: string) {
-  console.log(JSON.stringify({ event: 'escalation_process_start', orgId }));
+  logger.info('Escalation processor start', { event: 'escalation_process_start', org_id: orgId });
 
   try {
     // Fetch all tasks with risk_flag and not completed in this org
@@ -107,7 +108,12 @@ export async function processEscalations(supabase: SupabaseClient, orgId: string
       }
     }
   } catch (error) {
-    console.error(JSON.stringify({ event: 'escalation_process_error', error }));
+    logger.error('Escalation processor unexpected error', {
+      event: 'escalation_process_error',
+      org_id: orgId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   }
 }
 
@@ -127,7 +133,13 @@ async function notifyAndLog(
     new_value: message.substring(0, 255),
   });
   if (eventError) {
-    console.error(JSON.stringify({ event: 'escalation_event_insert_error', taskId: task.id, error: eventError }));
+    logger.error('Escalation event insert failed', {
+      event: 'escalation_event_insert_error',
+      task_id: task.id,
+      org_id: task.org_id,
+      escalation_type: eventType,
+      error: eventError.message,
+    });
   }
 
   // Create notification

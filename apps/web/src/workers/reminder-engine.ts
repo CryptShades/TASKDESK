@@ -7,6 +7,7 @@ import {
   REMINDER_24H_WINDOW_UPPER,
 } from '@/lib/constants';
 import { acquireLock, releaseLock, readCursorState, updateCursorState } from '@/lib/worker-lock';
+import { logger } from '@/lib/logger';
 
 type TaskWithCampaign = Database['public']['Tables']['tasks']['Row'] & {
   campaign: {
@@ -88,7 +89,11 @@ export async function runReminderEngine(supabase: SupabaseClient, options?: Remi
   const lockName = 'reminders';
   const acquired = await acquireLock(supabase, lockName, 25);
   if (!acquired) {
-    console.log(JSON.stringify({ event: 'reminder_engine_skipped', reason: 'lock_held', startTime }));
+    logger.info('Reminder engine skipped — lock held by another instance', {
+      event: 'reminder_engine_skipped',
+      reason: 'lock_held',
+      startTime,
+    });
     return { processed: processedCount, notified: notifiedCount };
   }
 
@@ -125,12 +130,12 @@ export async function runReminderEngine(supabase: SupabaseClient, options?: Remi
       cursorPosition = null;
     }
 
-    console.log(JSON.stringify({
+    logger.info('Reminder engine start', {
       event: 'reminder_engine_start',
       startTime,
       batchSize: orgs?.length ?? 0,
       cursorPosition: lastProcessedOrgId,
-    }));
+    });
 
     if (orgs && orgs.length > 0) {
       const orgIds = orgs.map(o => o.id);
@@ -180,11 +185,11 @@ export async function runReminderEngine(supabase: SupabaseClient, options?: Remi
             }
           } else {
             // Log rejected task process but continue with others
-            console.error(JSON.stringify({
+            logger.error('Reminder engine task processing failed', {
               event: 'reminder_engine_task_process_failed',
-              taskId: task.id,
-              reason: result.reason,
-            }));
+              task_id: task.id,
+              error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+            });
           }
         }
       }
@@ -194,18 +199,22 @@ export async function runReminderEngine(supabase: SupabaseClient, options?: Remi
     }
 
   } catch (error) {
-    console.error(JSON.stringify({ event: 'reminder_engine_error', error }));
+    logger.error('Reminder engine unexpected error', {
+      event: 'reminder_engine_error',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   } finally {
     await releaseLock(supabase, lockName);
   }
 
   const durationMs = Date.now() - wallStart;
-  console.log(JSON.stringify({
+  logger.info('Reminder engine end', {
     event: 'reminder_engine_end',
     durationMs,
     tasksProcessed: processedCount,
     notified: notifiedCount,
-  }));
+  });
 
   return { processed: processedCount, notified: notifiedCount };
 }
@@ -251,13 +260,11 @@ async function processTask(
           new_value: 'hard_risk',
         });
         if (riskEventError) {
-          console.error(
-            JSON.stringify({
-              event: 'reminder_engine_event_insert_error',
-              taskId: task.id,
-              error: riskEventError,
-            })
-          );
+          logger.error('Reminder engine risk flag event insert failed', {
+            event: 'reminder_engine_event_insert_error',
+            task_id: task.id,
+            error: riskEventError.message,
+          });
         }
       }
 
@@ -308,7 +315,11 @@ async function createReminderNotification(
     new_value: type,
   });
   if (eventError) {
-    console.error(JSON.stringify({ event: 'reminder_engine_event_insert_error', taskId: task.id, error: eventError }));
+    logger.error('Reminder engine reminder event insert failed', {
+      event: 'reminder_engine_event_insert_error',
+      task_id: task.id,
+      error: eventError.message,
+    });
   }
 
   // Create notification

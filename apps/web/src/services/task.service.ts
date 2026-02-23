@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { revalidateTag } from 'next/cache';
 import type { Database } from '../../supabase/types';
 import { createNotification } from './notification.service';
 import { runRiskEngine } from '@/workers/risk-engine';
@@ -48,7 +49,8 @@ export async function getTasksByCampaign(campaignId: string, orgId: string) {
     `)
     .eq('campaign_id', campaignId)
     .eq('org_id', orgId)
-    .order('due_date', { ascending: true });
+    .order('due_date', { ascending: true })
+    .limit(200); // 200 tasks per campaign ceiling; orgs at this scale use the full API
 
   if (error) {
     throw new TaskError(ErrorCode.TASKS_FETCH_FAILED, 'Failed to fetch tasks');
@@ -75,6 +77,7 @@ export async function getTaskById(taskId: string, orgId: string) {
     .eq('id', taskId)
     .eq('org_id', orgId)
     .order('created_at', { ascending: false, referencedTable: 'task_events' })
+    .limit(100, { referencedTable: 'task_events' }) // Newest 100 events cover any realistic audit view
     .single();
 
   if (error) {
@@ -96,7 +99,8 @@ export async function getMyTasks(userId: string, orgId: string) {
     `)
     .eq('owner_id', userId)
     .eq('org_id', orgId)
-    .order('due_date', { ascending: true });
+    .order('due_date', { ascending: true })
+    .limit(200); // 200 active tasks per user is a practical ceiling
 
   if (error) {
     throw new TaskError(ErrorCode.TASKS_FETCH_FAILED, 'Failed to fetch your tasks');
@@ -218,8 +222,13 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ac
     new_value: newStatus,
   });
 
+  // Bust the dashboard cache for this org — stalled-task count and risk metrics
+  // just changed. Fires synchronously before the response so the next page load
+  // gets fresh data even if the risk engine hasn't re-scored campaigns yet.
+  revalidateTag(`dashboard-${orgId}`);
+
   // Trigger risk engine fire-and-forget (event-triggered mode)
-  runRiskEngine(supabase, { orgId }).catch(err => 
+  runRiskEngine(supabase, { orgId }).catch(err =>
     console.error('Event-triggered Risk Engine failed:', err)
   );
 

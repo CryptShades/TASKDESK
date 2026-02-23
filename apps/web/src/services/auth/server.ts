@@ -200,14 +200,44 @@ export async function inviteMember(data: InviteData) {
 
 export async function acceptInvite(data: AcceptInviteData) {
   const supabase = createClient();
+  const adminSupabase = createAdminClient();
 
-  // Verify token and get invite data
+  // --- Pre-flight: look up our invitation record by token_hash ---
+  // Enforces expiry and attempt throttling before hitting Supabase Auth
+  const { data: invite } = await adminSupabase
+    .from('invitations')
+    .select('id, expires_at, revoked_at, accepted_at, attempt_count')
+    .eq('token_hash', data.token)
+    .single();
+
+  if (invite) {
+    if (invite.revoked_at) {
+      throw new AuthError(ErrorCode.INVITE_REVOKED, 'This invitation has been revoked');
+    }
+    if (invite.accepted_at) {
+      throw new AuthError(ErrorCode.INVITE_ALREADY_USED, 'This invitation has already been used');
+    }
+    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+      throw new AuthError(ErrorCode.INVITE_EXPIRED, 'This invitation has expired');
+    }
+  }
+
+  // Verify token with Supabase Auth
   const { data: inviteData, error: inviteError } = await supabase.auth.verifyOtp({
     token_hash: data.token,
     type: 'invite',
   });
 
   if (inviteError) {
+    // Track failed attempt; auto-revoke after 3 failures
+    if (invite) {
+      const newCount = (invite.attempt_count ?? 0) + 1;
+      const updates: Record<string, unknown> = { attempt_count: newCount };
+      if (newCount >= 3) {
+        updates.revoked_at = new Date().toISOString();
+      }
+      await adminSupabase.from('invitations').update(updates).eq('id', invite.id);
+    }
     throw new AuthError(ErrorCode.INVALID_TOKEN, 'Invalid or expired invite token');
   }
 
@@ -247,6 +277,14 @@ export async function acceptInvite(data: AcceptInviteData) {
 
   if (userError) {
     throw new AuthError(ErrorCode.USER_CREATE_FAILED, 'Failed to create user record');
+  }
+
+  // Mark invitation as accepted
+  if (invite) {
+    await adminSupabase
+      .from('invitations')
+      .update({ accepted_at: new Date().toISOString() })
+      .eq('id', invite.id);
   }
 
   return user;

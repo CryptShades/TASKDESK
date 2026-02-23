@@ -6,8 +6,17 @@ describe('determineEscalationStage', () => {
     const now = new Date();
     const task = {
       id: '1',
-      risk_flag: 'soft_risk' as const,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: 'soft_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -20,12 +29,27 @@ describe('determineEscalationStage', () => {
     const stage1Time = new Date(now.getTime() - 11 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      risk_flag: 'soft_risk' as const,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: 'soft_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
+        task_id: '1',
+        org_id: 'org1',
+        actor_id: 'system',
         event_type: 'escalation_stage_1',
+        old_value: null,
+        new_value: null,
         created_at: stage1Time.toISOString(),
       },
     ];
@@ -39,12 +63,27 @@ describe('determineEscalationStage', () => {
     const stage1Time = new Date(now.getTime() - 13 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      risk_flag: 'soft_risk' as const,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: 'soft_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
+        task_id: '1',
+        org_id: 'org1',
+        actor_id: 'system',
         event_type: 'escalation_stage_1',
+        old_value: null,
+        new_value: null,
         created_at: stage1Time.toISOString(),
       },
     ];
@@ -58,12 +97,27 @@ describe('determineEscalationStage', () => {
     const stage1Time = new Date(now.getTime() - 25 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      risk_flag: 'soft_risk' as const,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: 'soft_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
+        task_id: '1',
+        org_id: 'org1',
+        actor_id: 'system',
         event_type: 'escalation_stage_1',
+        old_value: null,
+        new_value: null,
         created_at: stage1Time.toISOString(),
       },
     ];
@@ -78,16 +132,37 @@ describe('determineEscalationStage', () => {
     const stage2Time = new Date(now.getTime() - 2 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      risk_flag: 'soft_risk' as const,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: 'soft_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event2',
+        task_id: '1',
+        org_id: 'org1',
+        actor_id: 'system',
         event_type: 'escalation_stage_2',
+        old_value: null,
+        new_value: null,
         created_at: stage2Time.toISOString(),
       },
       {
+        id: 'event1',
+        task_id: '1',
+        org_id: 'org1',
+        actor_id: 'system',
         event_type: 'escalation_stage_1',
+        old_value: null,
+        new_value: null,
         created_at: stage1Time.toISOString(),
       },
     ];
@@ -101,12 +176,27 @@ describe('determineEscalationStage', () => {
     const stage1Time = new Date(now.getTime() - 49 * 60 * 60 * 1000);
     const task = {
       id: '1',
-      risk_flag: 'soft_risk' as const,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: 'soft_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents = [
       {
+        id: 'event1',
+        task_id: '1',
+        org_id: 'org1',
+        actor_id: 'system',
         event_type: 'escalation_stage_1',
+        old_value: null,
+        new_value: null,
         created_at: stage1Time.toISOString(),
       },
     ];
@@ -119,8 +209,17 @@ describe('determineEscalationStage', () => {
     const now = new Date();
     const task = {
       id: '1',
-      risk_flag: null,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'in_progress' as const,
+      risk_flag: null,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 
@@ -132,8 +231,17 @@ describe('determineEscalationStage', () => {
     const now = new Date();
     const task = {
       id: '1',
-      risk_flag: 'soft_risk' as const,
+      campaign_id: 'camp1',
+      org_id: 'org1',
+      title: 'Test Task',
+      owner_id: 'user1',
+      due_date: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+      dependency_id: null,
       status: 'completed' as const,
+      risk_flag: 'soft_risk' as const,
+      assigned_at: null,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
     };
     const taskEvents: any[] = [];
 

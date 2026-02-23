@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { theme } from '../../src/theme';
 import { signIn } from '../../src/lib/auth';
+import { registerToken } from '../../src/services/push-notifications';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -28,7 +29,14 @@ export default function LoginScreen() {
     setLoading(true);
     setError(null);
     try {
-      await signIn(email, password);
+      const data = await signIn(email, password);
+      // Re-register push token after login — tokens can change on app reinstall
+      // or when Expo rotates them; a stale token causes silent push failures.
+      if (data.user?.id) {
+        registerToken(data.user.id).catch(() => {
+          // Non-critical: push registration failure must not block sign-in
+        });
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {

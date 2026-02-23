@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/services/auth/server';
 import { markAllAsRead } from '@/services/notification.service';
+import { withErrorHandler } from '@/lib/api-handler';
 
-export async function PATCH(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    await markAllAsRead(currentUser.id);
+export const PATCH = withErrorHandler(async (request: NextRequest) => {
+  const currentUser = await getCurrentUser();
+  await markAllAsRead(currentUser.id);
 
-    return NextResponse.json(
-      { data: { success: true }, error: null },
-      { status: 200 }
-    );
-  } catch (error: any) {
-    return NextResponse.json(
-      { data: null, error: { code: error.code || 'INTERNAL_ERROR', message: error.message } },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json(
+    { data: { success: true }, error: null },
+    { status: 200 }
+  );
+});

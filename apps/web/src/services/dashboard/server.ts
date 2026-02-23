@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { unstable_cache } from 'next/cache';
 import type { Database } from '../../../supabase/types';
 import { ErrorCode } from '@taskdesk/types';
 
@@ -46,9 +47,7 @@ export class DashboardError extends Error {
   }
 }
 
-export async function getFounderDashboard(orgId: string): Promise<FounderDashboardData> {
-  const supabase = createClient();
-
+async function _getFounderDashboard(orgId: string): Promise<FounderDashboardData> {
   // Get metrics in one query
   const metrics = await getDashboardMetrics(orgId);
 
@@ -65,6 +64,20 @@ export async function getFounderDashboard(orgId: string): Promise<FounderDashboa
   };
 }
 
+/**
+ * Cached founder dashboard — 5-minute TTL keyed per org.
+ * Tag `dashboard-${orgId}` allows on-demand invalidation when risk changes.
+ * A founder refreshing the page 10× in one hour pays for 1 aggregate query,
+ * not 10.
+ */
+export async function getFounderDashboard(orgId: string): Promise<FounderDashboardData> {
+  return unstable_cache(
+    _getFounderDashboard,
+    ['dashboard-stats', orgId],
+    { revalidate: 300, tags: [`dashboard-${orgId}`] },
+  )(orgId);
+}
+
 async function getDashboardMetrics(orgId: string) {
   const supabase = createClient();
 
@@ -72,7 +85,8 @@ async function getDashboardMetrics(orgId: string) {
   const { data: campaigns, error: campaignsError } = await supabase
     .from('campaigns')
     .select('risk_status')
-    .eq('org_id', orgId);
+    .eq('org_id', orgId)
+    .limit(100); // A founder with 100+ active campaigns has bigger problems
 
   if (campaignsError) {
     throw new DashboardError(ErrorCode.METRICS_FETCH_FAILED, 'Failed to fetch dashboard metrics');
@@ -119,7 +133,8 @@ async function getCampaignsWithTaskCounts(orgId: string) {
       client:clients(id, name)
     `)
     .eq('org_id', orgId)
-    .order('launch_date', { ascending: true });
+    .order('launch_date', { ascending: true })
+    .limit(100); // A founder with 100+ active campaigns has bigger problems
 
   if (campaignsError) {
     throw new DashboardError(ErrorCode.CAMPAIGNS_FETCH_FAILED, 'Failed to fetch campaigns');
@@ -130,7 +145,8 @@ async function getCampaignsWithTaskCounts(orgId: string) {
   const { data: tasks, error: tasksError } = await supabase
     .from('tasks')
     .select('campaign_id, status, due_date')
-    .in('campaign_id', campaignIds);
+    .in('campaign_id', campaignIds)
+    .limit(200); // 200 tasks per campaign ceiling; orgs at this scale use the full API
 
   if (tasksError) {
     throw new DashboardError(ErrorCode.TASKS_FETCH_FAILED, 'Failed to fetch task counts');
@@ -166,7 +182,8 @@ export async function getDependencyAlerts(orgId: string): Promise<DependencyAler
     .rpc('get_dependency_alerts', {
       p_org_id: orgId,
       p_gap_hours: 12
-    });
+    })
+    .limit(8); // Dashboard alert feed shows at most 8 entries per design spec
 
   if (error) {
     // Fallback to manual query if RPC doesn't exist
@@ -187,7 +204,8 @@ export async function getDependencyAlerts(orgId: string): Promise<DependencyAler
       `)
       .eq('org_id', orgId)
       .eq('status', 'not_started')
-      .not('dependency_id', 'is', null);
+      .not('dependency_id', 'is', null)
+      .limit(8); // Dashboard alert feed shows at most 8 entries per design spec
 
     if (tasksError) {
       throw new DashboardError(ErrorCode.ALERTS_FETCH_FAILED, 'Failed to fetch dependency alerts');

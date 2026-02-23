@@ -8,6 +8,8 @@ export const metadata = {
   title: 'My Tasks | Taskdesk',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function MyTasksPage() {
   const currentUser = await getCurrentUser();
 

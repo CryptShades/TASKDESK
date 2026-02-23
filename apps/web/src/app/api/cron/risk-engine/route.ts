@@ -3,38 +3,29 @@ import { createClient } from '@/lib/supabase/server';
 import { runRiskEngine } from '@/workers/risk-engine';
 import { validateCronRequest } from '@/lib/cron-auth';
 import { readCursorState } from '@/lib/worker-lock';
+import { withErrorHandler } from '@/lib/api-handler';
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const auth = validateCronRequest(request);
   if (!auth.authorized) return auth.response;
 
-  try {
-    const supabase = createClient();
+  const supabase = createClient();
 
-    // Read cursor state before running to log pagination progress
-    const { lastProcessedOrgId: previousCursor, pageSize } = await readCursorState(supabase, 'risk_engine');
-    const estimatedProgressMsg = previousCursor
-      ? `Continuing from org ${previousCursor}`
-      : 'Starting from beginning';
+  // Read cursor state before running to log pagination progress
+  const { lastProcessedOrgId: previousCursor, pageSize } = await readCursorState(supabase, 'risk_engine');
 
-    const result = await runRiskEngine(supabase);
+  const result = await runRiskEngine(supabase);
 
-    return NextResponse.json({
-      success: true,
-      stats: result,
-      pagination: {
-        batchSize: result.processedOrgs,
-        pageSize,
-        previousCursor,
-        estimatedProgress: estimatedProgressMsg,
-      },
-    });
-  } catch (error: any) {
-    console.error('Risk Engine Cron Error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
-}
-
+  return NextResponse.json({
+    success: true,
+    stats: result,
+    pagination: {
+      batchSize: result.processedOrgs,
+      pageSize,
+      previousCursor,
+      estimatedProgress: previousCursor
+        ? `Continuing from org ${previousCursor}`
+        : 'Starting from beginning',
+    },
+  });
+});

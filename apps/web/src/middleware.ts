@@ -1,7 +1,49 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { signupLimiter, acceptLimiter, applyRateLimit } from '@/lib/rate-limit';
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // --- Rate limiting for sensitive auth endpoints (runs before session work) ---
+  if (request.method === 'POST') {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'anonymous';
+
+    let limiter = null;
+    if (pathname === '/api/auth/signup') limiter = signupLimiter;
+    else if (pathname === '/api/auth/invite/accept') limiter = acceptLimiter;
+
+    if (limiter) {
+      const result = await applyRateLimit(limiter, ip);
+
+      if (result && !result.success) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': String(Math.ceil((result.reset - Date.now()) / 1000)),
+              'X-RateLimit-Limit': String(result.limit),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(result.reset),
+            },
+          },
+        );
+      }
+
+      // Not rate limited — pass through with informational headers
+      const rateLimitResponse = NextResponse.next({ request: { headers: request.headers } });
+      if (result) {
+        rateLimitResponse.headers.set('X-RateLimit-Limit', String(result.limit));
+        rateLimitResponse.headers.set('X-RateLimit-Remaining', String(result.remaining));
+        rateLimitResponse.headers.set('X-RateLimit-Reset', String(result.reset));
+      }
+      return rateLimitResponse;
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -58,9 +100,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
-  // Protect routes
-  const { pathname } = request.nextUrl;
 
   // Skip middleware for static assets
   if (

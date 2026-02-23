@@ -98,7 +98,8 @@ export async function getEscalationsByTask(taskId: string): Promise<EscalationEv
     `)
     .eq('task_id', taskId)
     .in('event_type', ['escalation_stage_1', 'escalation_stage_2', 'escalation_stage_3'])
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(100); // Newest 100 escalation events cover any realistic task history
 
   if (error) {
     throw new EscalationError(ErrorCode.ESCALATIONS_FETCH_FAILED, 'Failed to fetch task escalations');

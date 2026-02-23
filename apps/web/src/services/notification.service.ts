@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ErrorCode } from '@taskdesk/types';
+import { logger } from '@/lib/logger';
 
 export interface CreateNotificationData {
   org_id: string;
@@ -101,9 +102,14 @@ export async function sendPushNotification(userId: string, title: string, body: 
     .eq('id', userId)
     .single();
 
-  if (userError || !user?.expo_push_token) {
-    // Silently fail if no token - user might not have push notifications enabled
-    return { success: false, reason: 'No push token available' };
+  if (userError) {
+    logger.warn('Push notification skipped — failed to fetch user push token', { user_id: userId });
+    return { success: false, reason: 'Failed to fetch push token' };
+  }
+
+  if (!user?.expo_push_token) {
+    logger.info('Push notification skipped — no push token registered', { user_id: userId });
+    return { success: false, reason: 'No push token registered' };
   }
 
   try {
@@ -138,7 +144,10 @@ export async function sendPushNotification(userId: string, title: string, body: 
 
     return { success: true, result };
   } catch (error) {
-    console.error('Push notification failed:', error);
+    logger.error('Push notification failed', {
+      user_id: userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return { success: false, reason: 'Push API call failed' };
   }
 }
